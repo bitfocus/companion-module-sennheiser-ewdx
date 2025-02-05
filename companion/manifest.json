@@ -1,0 +1,26 @@
+{
+	"id": "sennheiser-ewdx",
+	"name": "sennheiser-ewdx",
+	"shortname": "sennheiser-ewdx",
+	"description": "Control devices of the Sennheiser EW-DX Series",
+	"version": "1.0.0",
+	"license": "MIT",
+	"repository": "git+https://github.com/bitfocus/companion-module-sennheiser-ewdx.git",
+	"bugs": "https://github.com/bitfocus/companion-module-sennheiser-ewdx/issues",
+	"maintainers": [
+		{
+			"name": "Leon Reucher",
+			"email": "leon.reucher@ultimate-technology.de"
+		}
+	],
+	"runtime": {
+		"type": "node22",
+		"api": "nodejs-ipc",
+		"apiVersion": "0.0.0",
+		"entrypoint": "../dist/main.js"
+	},
+	"legacyIds": [],
+	"manufacturer": "Sennheiser",
+	"products": ["EM2", "EM2 Dante", "EM4"],
+	"keywords": ["EW DX", "EWDX"]
+}
