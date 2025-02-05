@@ -5,5 +5,5 @@ package-lock.json
 /dist
 DEBUG-*
 /.yarn
-.yarn.lock
+yarn.lock
 .DS_STORE
