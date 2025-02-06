@@ -30,13 +30,17 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	}
 
 	initReceiver(): void {
-		this.receiver = new EWDXReceiver(this, this.config.model, this.config.host)
-		this.updateStatus(InstanceStatus.Ok)
+		if (this.config.host != null && this.config.host != '') {
+			this.receiver = new EWDXReceiver(this, this.config.model, this.config.host)
+			this.updateStatus(InstanceStatus.Ok)
 
-		this.updateActions()
-		this.updateFeedbacks()
-		this.updateVariableDefinitions()
-		this.updatePresets()
+			this.updateActions()
+			this.updateFeedbacks()
+			this.updateVariableDefinitions()
+			this.updatePresets()
+		} else {
+			this.updateStatus(InstanceStatus.BadConfig, 'Missing IP address!')
+		}
 	}
 
 	getConfigFields(): SomeCompanionConfigField[] {

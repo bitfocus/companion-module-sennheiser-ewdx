@@ -1,6 +1,7 @@
 /* eslint-disable @typescript-eslint/explicit-module-boundary-types */
-import { createSocket } from 'dgram'
+import { RemoteInfo } from 'dgram'
 import { ModuleInstance } from './main.js'
+import { SharedUdpSocket } from '@companion-module/base'
 
 const UNKNOWN = 'nAn'
 const pollingInterval = 59000
@@ -30,7 +31,8 @@ class NetworkInterface {
 }
 
 export class EWDXReceiver {
-	private udpSocket
+	// private udpSocket
+	private socket: SharedUdpSocket
 	host: string
 	context: ModuleInstance
 	model: ReceiverModel
@@ -84,12 +86,16 @@ export class EWDXReceiver {
 			this.channels[3] = new RxChannel(4, this)
 		}
 
-		this.udpSocket = createSocket('udp4')
+		// this.udpSocket = createSocket('udp4')
+		this.socket = context.createSharedUdpSocket('udp4', (msg, rinfo) => this.parseMessage(msg, rinfo))
 
 		this.setupListeners()
 
 		this.initSubscriptions()
-		this.getStaticInformation()
+
+		setTimeout(() => {
+			this.getStaticInformation()
+		}, 1000)
 
 		setInterval(() => {
 			this.initSubscriptions()
@@ -214,31 +220,24 @@ export class EWDXReceiver {
 	}
 
 	private sendMessage(message: string) {
-		this.udpSocket.send(message, 45, this.host, (err) => {
-			if (err) {
-				console.error('Error sending UDP message:', err)
-			}
-		})
+		console.log(this.host)
+		console.log(message)
+		this.socket.send(message, 45, this.host)
 	}
 
 	private setupListeners() {
-		this.udpSocket.on('message', (msg) => {
-			// console.log(`Message received from ${rinfo.address}:${rinfo.port}`)
-			console.log('Raw:', msg.toString())
-			this.parseMessage(msg.toString())
+		this.socket.bind(45, this.host, () => {
+			console.log('Socket successfully connected.')
 		})
 
-		this.udpSocket.on('error', (err) => {
+		this.socket.on('error', (err) => {
 			console.error('Socket error:', err)
-			this.udpSocket.close()
+			// this.udpSocket.close()
 		})
 
-		this.udpSocket.on('listening', () => {
-			const address = this.udpSocket.address()
-			console.log(`Socket listening on ${address.address}:${address.port}`)
+		this.socket.on('close', () => {
+			console.log('Socket closed!')
 		})
-
-		this.udpSocket.bind(45)
 	}
 
 	initSubscriptions() {
@@ -285,8 +284,9 @@ export class EWDXReceiver {
 				},
 			},
 		}
-
-		this.sendMessage(JSON.stringify(msgRX1))
+		setTimeout(() => {
+			this.sendMessage(JSON.stringify(msgRX1))
+		}, 1000)
 
 		if (this.model === ReceiverModel.EM4 || this.model === ReceiverModel.EM2_DANTE) {
 			const msgRX2 = {
@@ -304,8 +304,9 @@ export class EWDXReceiver {
 					},
 				},
 			}
-
-			this.sendMessage(JSON.stringify(msgRX2))
+			setTimeout(() => {
+				this.sendMessage(JSON.stringify(msgRX2))
+			}, 1000)
 		}
 
 		const defaultTxSettings = {
@@ -363,7 +364,9 @@ export class EWDXReceiver {
 			},
 		}
 
-		this.sendMessage(JSON.stringify(msgMates))
+		setTimeout(() => {
+			this.sendMessage(JSON.stringify(msgMates))
+		}, 1000)
 
 		const msgDevice = {
 			osc: {
@@ -388,7 +391,10 @@ export class EWDXReceiver {
 				},
 			},
 		}
-		this.sendMessage(JSON.stringify(msgDevice))
+
+		setTimeout(() => {
+			this.sendMessage(JSON.stringify(msgDevice))
+		}, 1000)
 
 		const msgNetwork = {
 			osc: {
@@ -433,292 +439,576 @@ export class EWDXReceiver {
 				},
 			},
 		}
-		this.sendMessage(JSON.stringify(msgNetwork))
+		setTimeout(() => {
+			this.sendMessage(JSON.stringify(msgNetwork))
+		}, 1000)
 	}
 
-	private parseMessage(message: string): void {
-		const json = JSON.parse(message)
+	private parseMessage(raw: Uint8Array, rinfo: RemoteInfo) {
+		if (rinfo.address == this.host && rinfo.port == 45) {
+			const message = Buffer.from(raw).toString()
 
-		if (json.device) {
-			if (json.device.encryption != undefined) {
-				this.encryption = json.device.encryption
-			}
-			if (json.device.link_density_mode != undefined) {
-				this.linkDensityMode = json.device.link_density_mode
-			}
-			if (json.device.brightness != undefined) {
-				this.brightness = json.device.brightness
-			}
-			if (json.device.name != undefined) {
-				this.name = json.device.name
-			}
-			if (json.device.frequency_code != undefined) {
-				this.frequencyCode = json.device.frequency_code
-			}
-			if (json.device.lock != undefined) {
-				this.lock = json.device.lock
-			}
-			if (json.device.location != undefined) {
-				this.location = json.device.location
-			}
-			if (json.device.identity != undefined) {
-				if (json.device.identity.version != undefined) {
-					this.firmwareVersion = json.device.identity.version
-				}
-				if (json.device.identity.serial != undefined) {
-					this.serialNumber = json.device.identity.serial
-				}
-			}
-			if (json.device.identification != undefined) {
-				if (json.device.identification.visual != undefined) {
-					this.identification = json.device.identification.visual
-				}
-			}
-			if (json.device.network != undefined) {
-				if (json.device.network.dante != undefined) {
-					if (json.device.network.dante.identity != undefined) {
-						if (json.device.network.dante.identity.version != undefined) {
-							this.danteVersion = json.device.network.dante.identity.version
-						}
-					}
-					if (json.device.network.dante.interface_mapping != undefined) {
-						this.danteInterfaceMapping = json.device.network.dante.interface_mapping
-					}
-					if (json.device.network.dante.macs != undefined) {
-						this.dantePrimary.mac = json.device.network.dante.macs[0]
-						this.danteSecondary.mac = json.device.network.dante.macs[1]
-					}
-					if (json.device.network.dante.interfaces != undefined) {
-						this.dantePrimary.name = json.device.network.dante.interfaces[0]
-						this.danteSecondary.name = json.device.network.dante.interfaces[1]
-					}
-					if (json.device.network.dante.ipv4 != undefined) {
-						if (json.device.network.dante.ipv4.netmask != undefined) {
-							this.dantePrimary.netmask = json.device.network.dante.ipv4.netmask[0]
-							this.danteSecondary.netmask = json.device.network.dante.ipv4.netmask[1]
-						}
-						if (json.device.network.dante.ipv4.manual_netmask != undefined) {
-							this.dantePrimary.manualNetmask = json.device.network.dante.ipv4.manual_netmask[0]
-							this.danteSecondary.manualNetmask = json.device.network.dante.ipv4.manual_netmask[1]
-						}
-						if (json.device.network.dante.ipv4.ipaddr != undefined) {
-							this.dantePrimary.ip = json.device.network.dante.ipv4.ipaddr[0]
-							this.danteSecondary.ip = json.device.network.dante.ipv4.ipaddr[1]
-						}
-						if (json.device.network.dante.ipv4.manual_ipaddr != undefined) {
-							this.dantePrimary.manualIP = json.device.network.dante.ipv4.manual_ipaddr[0]
-							this.danteSecondary.manualIP = json.device.network.dante.ipv4.manual_ipaddr[1]
-						}
-						if (json.device.network.dante.ipv4.gateway != undefined) {
-							this.dantePrimary.gateway = json.device.network.dante.ipv4.gateway[0]
-							this.danteSecondary.gateway = json.device.network.dante.ipv4.gateway[1]
-						}
-						if (json.device.network.dante.ipv4.manual_gateway != undefined) {
-							this.dantePrimary.manualGateway = json.device.network.dante.ipv4.manual_gateway[0]
-							this.danteSecondary.manualGateway = json.device.network.dante.ipv4.manual_gateway[1]
-						}
-						if (json.device.network.dante.ipv4.auto != undefined) {
-							this.dantePrimary.dhcp = json.device.network.dante.ipv4.auto[0]
-							this.danteSecondary.dhcp = json.device.network.dante.ipv4.auto[1]
-						}
-					}
-				}
-				if (json.device.network.ipv4 != undefined) {
-					if (json.device.network.ipv4.manual_netmask != undefined) {
-						this.networkInterface.manualNetmask = json.device.network.ipv4.manual_netmask
-					}
-					if (json.device.network.ipv4.manual_ipaddr != undefined) {
-						this.networkInterface.manualIP = json.device.network.ipv4.manual_ipaddr
-					}
-					if (json.device.network.ipv4.manual_gateway != undefined) {
-						this.networkInterface.manualGateway = json.device.network.ipv4.manual_gateway
-					}
-					if (json.device.network.ipv4.netmask != undefined) {
-						this.networkInterface.netmask = json.device.network.ipv4.netmask
-					}
-					if (json.device.network.ipv4.ipaddr != undefined) {
-						this.networkInterface.ip = json.device.network.ipv4.ipaddr
-					}
-					if (json.device.network.ipv4.gateway != undefined) {
-						this.networkInterface.gateway = json.device.network.ipv4.gateway
-					}
-					if (json.device.network.ipv4.auto != undefined) {
-						this.networkInterface.dhcp = json.device.network.ipv4.auto
-					}
-				}
-				if (json.device.network.mdns != undefined) {
-					this.mdns = json.device.network.mdns
-				}
-			}
-			this.publishVariableValues()
-		}
+			const json = JSON.parse(message)
 
-		if (json.m) {
+			if (json.device) {
+				if (json.device.encryption != undefined) {
+					this.encryption = json.device.encryption
+				}
+				if (json.device.link_density_mode != undefined) {
+					this.linkDensityMode = json.device.link_density_mode
+				}
+				if (json.device.brightness != undefined) {
+					this.brightness = json.device.brightness
+				}
+				if (json.device.name != undefined) {
+					this.name = json.device.name
+				}
+				if (json.device.frequency_code != undefined) {
+					this.frequencyCode = json.device.frequency_code
+				}
+				if (json.device.lock != undefined) {
+					this.lock = json.device.lock
+				}
+				if (json.device.location != undefined) {
+					this.location = json.device.location
+				}
+				if (json.device.identity != undefined) {
+					if (json.device.identity.version != undefined) {
+						this.firmwareVersion = json.device.identity.version
+					}
+					if (json.device.identity.serial != undefined) {
+						this.serialNumber = json.device.identity.serial
+					}
+				}
+				if (json.device.identification != undefined) {
+					if (json.device.identification.visual != undefined) {
+						this.identification = json.device.identification.visual
+					}
+				}
+				if (json.device.network != undefined) {
+					if (json.device.network.dante != undefined) {
+						if (json.device.network.dante.identity != undefined) {
+							if (json.device.network.dante.identity.version != undefined) {
+								this.danteVersion = json.device.network.dante.identity.version
+							}
+						}
+						if (json.device.network.dante.interface_mapping != undefined) {
+							this.danteInterfaceMapping = json.device.network.dante.interface_mapping
+						}
+						if (json.device.network.dante.macs != undefined) {
+							this.dantePrimary.mac = json.device.network.dante.macs[0]
+							this.danteSecondary.mac = json.device.network.dante.macs[1]
+						}
+						if (json.device.network.dante.interfaces != undefined) {
+							this.dantePrimary.name = json.device.network.dante.interfaces[0]
+							this.danteSecondary.name = json.device.network.dante.interfaces[1]
+						}
+						if (json.device.network.dante.ipv4 != undefined) {
+							if (json.device.network.dante.ipv4.netmask != undefined) {
+								this.dantePrimary.netmask = json.device.network.dante.ipv4.netmask[0]
+								this.danteSecondary.netmask = json.device.network.dante.ipv4.netmask[1]
+							}
+							if (json.device.network.dante.ipv4.manual_netmask != undefined) {
+								this.dantePrimary.manualNetmask = json.device.network.dante.ipv4.manual_netmask[0]
+								this.danteSecondary.manualNetmask = json.device.network.dante.ipv4.manual_netmask[1]
+							}
+							if (json.device.network.dante.ipv4.ipaddr != undefined) {
+								this.dantePrimary.ip = json.device.network.dante.ipv4.ipaddr[0]
+								this.danteSecondary.ip = json.device.network.dante.ipv4.ipaddr[1]
+							}
+							if (json.device.network.dante.ipv4.manual_ipaddr != undefined) {
+								this.dantePrimary.manualIP = json.device.network.dante.ipv4.manual_ipaddr[0]
+								this.danteSecondary.manualIP = json.device.network.dante.ipv4.manual_ipaddr[1]
+							}
+							if (json.device.network.dante.ipv4.gateway != undefined) {
+								this.dantePrimary.gateway = json.device.network.dante.ipv4.gateway[0]
+								this.danteSecondary.gateway = json.device.network.dante.ipv4.gateway[1]
+							}
+							if (json.device.network.dante.ipv4.manual_gateway != undefined) {
+								this.dantePrimary.manualGateway = json.device.network.dante.ipv4.manual_gateway[0]
+								this.danteSecondary.manualGateway = json.device.network.dante.ipv4.manual_gateway[1]
+							}
+							if (json.device.network.dante.ipv4.auto != undefined) {
+								this.dantePrimary.dhcp = json.device.network.dante.ipv4.auto[0]
+								this.danteSecondary.dhcp = json.device.network.dante.ipv4.auto[1]
+							}
+						}
+					}
+					if (json.device.network.ipv4 != undefined) {
+						if (json.device.network.ipv4.manual_netmask != undefined) {
+							this.networkInterface.manualNetmask = json.device.network.ipv4.manual_netmask
+						}
+						if (json.device.network.ipv4.manual_ipaddr != undefined) {
+							this.networkInterface.manualIP = json.device.network.ipv4.manual_ipaddr
+						}
+						if (json.device.network.ipv4.manual_gateway != undefined) {
+							this.networkInterface.manualGateway = json.device.network.ipv4.manual_gateway
+						}
+						if (json.device.network.ipv4.netmask != undefined) {
+							this.networkInterface.netmask = json.device.network.ipv4.netmask
+						}
+						if (json.device.network.ipv4.ipaddr != undefined) {
+							this.networkInterface.ip = json.device.network.ipv4.ipaddr
+						}
+						if (json.device.network.ipv4.gateway != undefined) {
+							this.networkInterface.gateway = json.device.network.ipv4.gateway
+						}
+						if (json.device.network.ipv4.auto != undefined) {
+							this.networkInterface.dhcp = json.device.network.ipv4.auto
+						}
+					}
+					if (json.device.network.mdns != undefined) {
+						this.mdns = json.device.network.mdns
+					}
+				}
+				this.publishVariableValues()
+			}
+
+			if (json.m) {
+				for (let i = 1; i <= this.channels.length; i++) {
+					const rxKey = `rx${i}`
+					if (json.m[rxKey]) {
+						if (json.m[rxKey].divi != undefined) {
+							this.channels[i - 1].activeAntenna = json.m[rxKey].divi
+						}
+						if (json.m[rxKey].rsqi != undefined) {
+							this.channels[i - 1].rsqi = json.m[rxKey].rsqi
+						}
+					}
+				}
+			}
+
+			if (json.mates) {
+				for (let i = 1; i <= this.channels.length; i++) {
+					const txKey = `tx${i}`
+					if (json.mates[txKey]) {
+						if (json.mates[txKey].mute != undefined) {
+							this.channels[i - 1].mate.muted = json.mates[txKey].mute
+						}
+						if (json.mates[txKey].battery != undefined) {
+							if (json.mates[txKey].battery.gauge != undefined) {
+								this.channels[i - 1].mate.batteryGauge = json.mates[txKey].battery.gauge
+							}
+							if (json.mates[txKey].battery.type != undefined) {
+								this.channels[i - 1].mate.batteryType = json.mates[txKey].battery.type
+							}
+							if (json.mates[txKey].battery.lifetime != undefined) {
+								this.channels[i - 1].mate.batteryLifetime = json.mates[txKey].battery.lifetime
+							}
+						}
+						if (json.mates[txKey].cable_emulation != undefined) {
+							this.channels[i - 1].mate.cableEmulation = json.mates[txKey].cable_emulation
+						}
+						if (json.mates[txKey].capsule != undefined) {
+							this.channels[i - 1].mate.capsule = json.mates[txKey].capsule
+						}
+						if (json.mates[txKey].identification != undefined) {
+							this.channels[i - 1].mate.identification = json.mates[txKey].identification
+						}
+						if (json.mates[txKey].led != undefined) {
+							this.channels[i - 1].mate.led = json.mates[txKey].led
+						}
+						if (json.mates[txKey].lock != undefined) {
+							this.channels[i - 1].mate.lock = json.mates[txKey].lock
+						}
+						if (json.mates[txKey].lowcut != undefined) {
+							this.channels[i - 1].mate.lowcut = json.mates[txKey].lowcut
+						}
+						if (json.mates[txKey].mute != undefined) {
+							this.channels[i - 1].mate.muted = json.mates[txKey].mute
+						}
+						if (json.mates[txKey].name != undefined) {
+							this.channels[i - 1].mate.name = json.mates[txKey].name
+						}
+						if (json.mates[txKey].trim != undefined) {
+							this.channels[i - 1].mate.trim = json.mates[txKey].trim
+						}
+						if (json.mates[txKey].type != undefined) {
+							this.channels[i - 1].mate.type = json.mates[txKey].type
+						}
+					}
+				}
+			}
+
 			for (let i = 1; i <= this.channels.length; i++) {
 				const rxKey = `rx${i}`
-				if (json.m[rxKey]) {
-					if (json.m[rxKey].divi != undefined) {
-						this.channels[i - 1].activeAntenna = json.m[rxKey].divi
+				if (json[rxKey]) {
+					const rxData = json[rxKey]
+					const channel = this.channels[i - 1]
+
+					if (rxData.warnings !== undefined) {
+						channel.hasAes256Error = false
+						channel.hasAfPeakWarning = false
+						channel.warnings = rxData.warnings.length > 0
+						if (channel.warnings) {
+							if (rxData.warnings.includes('Aes256Error')) {
+								channel.hasAes256Error = true
+							}
+							if (rxData.warnings.includes('AfPeak')) {
+								channel.hasAfPeakWarning = true
+							}
+						}
 					}
-					if (json.m[rxKey].rsqi != undefined) {
-						this.channels[i - 1].rsqi = json.m[rxKey].rsqi
+
+					if (rxData.frequency !== undefined) {
+						channel.frequency = rxData.frequency
+					}
+
+					if (rxData.name !== undefined) {
+						channel.name = rxData.name
+					}
+
+					if (rxData.mute !== undefined) {
+						channel.muted = rxData.mute
+					}
+
+					if (rxData.gain !== undefined) {
+						channel.gain = rxData.gain
+					}
+
+					if (rxData.identification?.visual != undefined) {
+						channel.identification = rxData.identification.visual
+					}
+
+					if (rxData.sync_settings != undefined) {
+						if (rxData.sync_settings.trim_ignore != undefined) {
+							channel.syncIgnoreTrim = rxData.sync_settings.trim_ignore
+						}
+						if (rxData.sync_settings.name_ignore != undefined) {
+							channel.syncIgnoreName = rxData.sync_settings.name_ignore
+						}
+						if (rxData.sync_settings.mute_config_ignore != undefined) {
+							channel.syncIgnoreMuteConfig = rxData.sync_settings.mute_config_ignore
+						}
+						if (rxData.sync_settings.lowcut_ignore != undefined) {
+							channel.syncIgnoreLowcut = rxData.sync_settings.lowcut_ignore
+						}
+						if (rxData.sync_settings.lock_ignore != undefined) {
+							channel.syncIgnoreLock = rxData.sync_settings.lock_ignore
+						}
+						if (rxData.sync_settings.led_ignore != undefined) {
+							channel.syncIgnoreLED = rxData.sync_settings.led_ignore
+						}
+						if (rxData.sync_settings.frequency_ignore != undefined) {
+							channel.syncIgnoreFrequency = rxData.sync_settings.frequency_ignore
+						}
+						if (rxData.sync_settings.cable_emulation_ignore != undefined) {
+							channel.syncIgnoreCableEmulation = rxData.sync_settings.cable_emulation_ignore
+						}
+						if (rxData.sync_settings.trim != undefined) {
+							channel.syncTrim = rxData.sync_settings.trim
+						}
+						if (rxData.sync_settings.mute_config_ts != undefined) {
+							channel.syncMuteConfigTS = rxData.sync_settings.mute_config_ts
+						}
+						if (rxData.sync_settings.mute_config != undefined) {
+							channel.syncMuteConfig = rxData.sync_settings.mute_config
+						}
+						if (rxData.sync_settings.lowcut != undefined) {
+							channel.syncLowcut = rxData.sync_settings.lowcut
+						}
+						if (rxData.sync_settings.lock != undefined) {
+							channel.syncLock = rxData.sync_settings.lock
+						}
+						if (rxData.sync_settings.led != undefined) {
+							channel.syncLED = rxData.sync_settings.led
+						}
+						if (rxData.sync_settings.cable_emulation != undefined) {
+							channel.syncCableEmulation = rxData.sync_settings.cable_emulation
+						}
 					}
 				}
 			}
-		}
-
-		if (json.mates) {
+			this.context.checkFeedbacks()
 			for (let i = 1; i <= this.channels.length; i++) {
-				const txKey = `tx${i}`
-				if (json.mates[txKey]) {
-					if (json.mates[txKey].mute != undefined) {
-						this.channels[i - 1].mate.muted = json.mates[txKey].mute
-					}
-					if (json.mates[txKey].battery != undefined) {
-						if (json.mates[txKey].battery.gauge != undefined) {
-							this.channels[i - 1].mate.batteryGauge = json.mates[txKey].battery.gauge
-						}
-						if (json.mates[txKey].battery.type != undefined) {
-							this.channels[i - 1].mate.batteryType = json.mates[txKey].battery.type
-						}
-						if (json.mates[txKey].battery.lifetime != undefined) {
-							this.channels[i - 1].mate.batteryLifetime = json.mates[txKey].battery.lifetime
-						}
-					}
-					if (json.mates[txKey].cable_emulation != undefined) {
-						this.channels[i - 1].mate.cableEmulation = json.mates[txKey].cable_emulation
-					}
-					if (json.mates[txKey].capsule != undefined) {
-						this.channels[i - 1].mate.capsule = json.mates[txKey].capsule
-					}
-					if (json.mates[txKey].identification != undefined) {
-						this.channels[i - 1].mate.identification = json.mates[txKey].identification
-					}
-					if (json.mates[txKey].led != undefined) {
-						this.channels[i - 1].mate.led = json.mates[txKey].led
-					}
-					if (json.mates[txKey].lock != undefined) {
-						this.channels[i - 1].mate.lock = json.mates[txKey].lock
-					}
-					if (json.mates[txKey].lowcut != undefined) {
-						this.channels[i - 1].mate.lowcut = json.mates[txKey].lowcut
-					}
-					if (json.mates[txKey].mute != undefined) {
-						this.channels[i - 1].mate.muted = json.mates[txKey].mute
-					}
-					if (json.mates[txKey].name != undefined) {
-						this.channels[i - 1].mate.name = json.mates[txKey].name
-					}
-					if (json.mates[txKey].trim != undefined) {
-						this.channels[i - 1].mate.trim = json.mates[txKey].trim
-					}
-					if (json.mates[txKey].type != undefined) {
-						this.channels[i - 1].mate.type = json.mates[txKey].type
-					}
-				}
+				this.channels[i - 1].publishVariableValues()
 			}
-		}
-
-		for (let i = 1; i <= this.channels.length; i++) {
-			const rxKey = `rx${i}`
-			if (json[rxKey]) {
-				const rxData = json[rxKey]
-				const channel = this.channels[i - 1]
-
-				if (rxData.warnings !== undefined) {
-					channel.hasAes256Error = false
-					channel.hasAfPeakWarning = false
-					channel.warnings = rxData.warnings.length > 0
-					if (channel.warnings) {
-						if (rxData.warnings.includes('Aes256Error')) {
-							channel.hasAes256Error = true
-						}
-						if (rxData.warnings.includes('AfPeak')) {
-							channel.hasAfPeakWarning = true
-						}
-					}
-				}
-
-				if (rxData.frequency !== undefined) {
-					channel.frequency = rxData.frequency
-				}
-
-				if (rxData.name !== undefined) {
-					channel.name = rxData.name
-				}
-
-				if (rxData.mute !== undefined) {
-					channel.muted = rxData.mute
-				}
-
-				if (rxData.gain !== undefined) {
-					channel.gain = rxData.gain
-				}
-
-				if (rxData.identification?.visual != undefined) {
-					channel.identification = rxData.identification.visual
-				}
-
-				if (rxData.sync_settings != undefined) {
-					if (rxData.sync_settings.trim_ignore != undefined) {
-						channel.syncIgnoreTrim = rxData.sync_settings.trim_ignore
-					}
-					if (rxData.sync_settings.name_ignore != undefined) {
-						channel.syncIgnoreName = rxData.sync_settings.name_ignore
-					}
-					if (rxData.sync_settings.mute_config_ignore != undefined) {
-						channel.syncIgnoreMuteConfig = rxData.sync_settings.mute_config_ignore
-					}
-					if (rxData.sync_settings.lowcut_ignore != undefined) {
-						channel.syncIgnoreLowcut = rxData.sync_settings.lowcut_ignore
-					}
-					if (rxData.sync_settings.lock_ignore != undefined) {
-						channel.syncIgnoreLock = rxData.sync_settings.lock_ignore
-					}
-					if (rxData.sync_settings.led_ignore != undefined) {
-						channel.syncIgnoreLED = rxData.sync_settings.led_ignore
-					}
-					if (rxData.sync_settings.frequency_ignore != undefined) {
-						channel.syncIgnoreFrequency = rxData.sync_settings.frequency_ignore
-					}
-					if (rxData.sync_settings.cable_emulation_ignore != undefined) {
-						channel.syncIgnoreCableEmulation = rxData.sync_settings.cable_emulation_ignore
-					}
-					if (rxData.sync_settings.trim != undefined) {
-						channel.syncTrim = rxData.sync_settings.trim
-					}
-					if (rxData.sync_settings.mute_config_ts != undefined) {
-						channel.syncMuteConfigTS = rxData.sync_settings.mute_config_ts
-					}
-					if (rxData.sync_settings.mute_config != undefined) {
-						channel.syncMuteConfig = rxData.sync_settings.mute_config
-					}
-					if (rxData.sync_settings.lowcut != undefined) {
-						channel.syncLowcut = rxData.sync_settings.lowcut
-					}
-					if (rxData.sync_settings.lock != undefined) {
-						channel.syncLock = rxData.sync_settings.lock
-					}
-					if (rxData.sync_settings.led != undefined) {
-						channel.syncLED = rxData.sync_settings.led
-					}
-					if (rxData.sync_settings.cable_emulation != undefined) {
-						channel.syncCableEmulation = rxData.sync_settings.cable_emulation
-					}
-				}
-			}
-		}
-		this.context.checkFeedbacks()
-		for (let i = 1; i <= this.channels.length; i++) {
-			this.channels[i - 1].publishVariableValues()
 		}
 	}
 
-	close() {
-		this.udpSocket.close(() => {
-			console.log('UDP Socket Closed')
-		})
-	}
+	// 	private parseMessage(message: string): void {
+	// 		const json = JSON.parse(message)
+
+	// 		if (json.device) {
+	// 			if (json.device.encryption != undefined) {
+	// 				this.encryption = json.device.encryption
+	// 			}
+	// 			if (json.device.link_density_mode != undefined) {
+	// 				this.linkDensityMode = json.device.link_density_mode
+	// 			}
+	// 			if (json.device.brightness != undefined) {
+	// 				this.brightness = json.device.brightness
+	// 			}
+	// 			if (json.device.name != undefined) {
+	// 				this.name = json.device.name
+	// 			}
+	// 			if (json.device.frequency_code != undefined) {
+	// 				this.frequencyCode = json.device.frequency_code
+	// 			}
+	// 			if (json.device.lock != undefined) {
+	// 				this.lock = json.device.lock
+	// 			}
+	// 			if (json.device.location != undefined) {
+	// 				this.location = json.device.location
+	// 			}
+	// 			if (json.device.identity != undefined) {
+	// 				if (json.device.identity.version != undefined) {
+	// 					this.firmwareVersion = json.device.identity.version
+	// 				}
+	// 				if (json.device.identity.serial != undefined) {
+	// 					this.serialNumber = json.device.identity.serial
+	// 				}
+	// 			}
+	// 			if (json.device.identification != undefined) {
+	// 				if (json.device.identification.visual != undefined) {
+	// 					this.identification = json.device.identification.visual
+	// 				}
+	// 			}
+	// 			if (json.device.network != undefined) {
+	// 				if (json.device.network.dante != undefined) {
+	// 					if (json.device.network.dante.identity != undefined) {
+	// 						if (json.device.network.dante.identity.version != undefined) {
+	// 							this.danteVersion = json.device.network.dante.identity.version
+	// 						}
+	// 					}
+	// 					if (json.device.network.dante.interface_mapping != undefined) {
+	// 						this.danteInterfaceMapping = json.device.network.dante.interface_mapping
+	// 					}
+	// 					if (json.device.network.dante.macs != undefined) {
+	// 						this.dantePrimary.mac = json.device.network.dante.macs[0]
+	// 						this.danteSecondary.mac = json.device.network.dante.macs[1]
+	// 					}
+	// 					if (json.device.network.dante.interfaces != undefined) {
+	// 						this.dantePrimary.name = json.device.network.dante.interfaces[0]
+	// 						this.danteSecondary.name = json.device.network.dante.interfaces[1]
+	// 					}
+	// 					if (json.device.network.dante.ipv4 != undefined) {
+	// 						if (json.device.network.dante.ipv4.netmask != undefined) {
+	// 							this.dantePrimary.netmask = json.device.network.dante.ipv4.netmask[0]
+	// 							this.danteSecondary.netmask = json.device.network.dante.ipv4.netmask[1]
+	// 						}
+	// 						if (json.device.network.dante.ipv4.manual_netmask != undefined) {
+	// 							this.dantePrimary.manualNetmask = json.device.network.dante.ipv4.manual_netmask[0]
+	// 							this.danteSecondary.manualNetmask = json.device.network.dante.ipv4.manual_netmask[1]
+	// 						}
+	// 						if (json.device.network.dante.ipv4.ipaddr != undefined) {
+	// 							this.dantePrimary.ip = json.device.network.dante.ipv4.ipaddr[0]
+	// 							this.danteSecondary.ip = json.device.network.dante.ipv4.ipaddr[1]
+	// 						}
+	// 						if (json.device.network.dante.ipv4.manual_ipaddr != undefined) {
+	// 							this.dantePrimary.manualIP = json.device.network.dante.ipv4.manual_ipaddr[0]
+	// 							this.danteSecondary.manualIP = json.device.network.dante.ipv4.manual_ipaddr[1]
+	// 						}
+	// 						if (json.device.network.dante.ipv4.gateway != undefined) {
+	// 							this.dantePrimary.gateway = json.device.network.dante.ipv4.gateway[0]
+	// 							this.danteSecondary.gateway = json.device.network.dante.ipv4.gateway[1]
+	// 						}
+	// 						if (json.device.network.dante.ipv4.manual_gateway != undefined) {
+	// 							this.dantePrimary.manualGateway = json.device.network.dante.ipv4.manual_gateway[0]
+	// 							this.danteSecondary.manualGateway = json.device.network.dante.ipv4.manual_gateway[1]
+	// 						}
+	// 						if (json.device.network.dante.ipv4.auto != undefined) {
+	// 							this.dantePrimary.dhcp = json.device.network.dante.ipv4.auto[0]
+	// 							this.danteSecondary.dhcp = json.device.network.dante.ipv4.auto[1]
+	// 						}
+	// 					}
+	// 				}
+	// 				if (json.device.network.ipv4 != undefined) {
+	// 					if (json.device.network.ipv4.manual_netmask != undefined) {
+	// 						this.networkInterface.manualNetmask = json.device.network.ipv4.manual_netmask
+	// 					}
+	// 					if (json.device.network.ipv4.manual_ipaddr != undefined) {
+	// 						this.networkInterface.manualIP = json.device.network.ipv4.manual_ipaddr
+	// 					}
+	// 					if (json.device.network.ipv4.manual_gateway != undefined) {
+	// 						this.networkInterface.manualGateway = json.device.network.ipv4.manual_gateway
+	// 					}
+	// 					if (json.device.network.ipv4.netmask != undefined) {
+	// 						this.networkInterface.netmask = json.device.network.ipv4.netmask
+	// 					}
+	// 					if (json.device.network.ipv4.ipaddr != undefined) {
+	// 						this.networkInterface.ip = json.device.network.ipv4.ipaddr
+	// 					}
+	// 					if (json.device.network.ipv4.gateway != undefined) {
+	// 						this.networkInterface.gateway = json.device.network.ipv4.gateway
+	// 					}
+	// 					if (json.device.network.ipv4.auto != undefined) {
+	// 						this.networkInterface.dhcp = json.device.network.ipv4.auto
+	// 					}
+	// 				}
+	// 				if (json.device.network.mdns != undefined) {
+	// 					this.mdns = json.device.network.mdns
+	// 				}
+	// 			}
+	// 			this.publishVariableValues()
+	// 		}
+
+	// 		if (json.m) {
+	// 			for (let i = 1; i <= this.channels.length; i++) {
+	// 				const rxKey = `rx${i}`
+	// 				if (json.m[rxKey]) {
+	// 					if (json.m[rxKey].divi != undefined) {
+	// 						this.channels[i - 1].activeAntenna = json.m[rxKey].divi
+	// 					}
+	// 					if (json.m[rxKey].rsqi != undefined) {
+	// 						this.channels[i - 1].rsqi = json.m[rxKey].rsqi
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+
+	// 		if (json.mates) {
+	// 			for (let i = 1; i <= this.channels.length; i++) {
+	// 				const txKey = `tx${i}`
+	// 				if (json.mates[txKey]) {
+	// 					if (json.mates[txKey].mute != undefined) {
+	// 						this.channels[i - 1].mate.muted = json.mates[txKey].mute
+	// 					}
+	// 					if (json.mates[txKey].battery != undefined) {
+	// 						if (json.mates[txKey].battery.gauge != undefined) {
+	// 							this.channels[i - 1].mate.batteryGauge = json.mates[txKey].battery.gauge
+	// 						}
+	// 						if (json.mates[txKey].battery.type != undefined) {
+	// 							this.channels[i - 1].mate.batteryType = json.mates[txKey].battery.type
+	// 						}
+	// 						if (json.mates[txKey].battery.lifetime != undefined) {
+	// 							this.channels[i - 1].mate.batteryLifetime = json.mates[txKey].battery.lifetime
+	// 						}
+	// 					}
+	// 					if (json.mates[txKey].cable_emulation != undefined) {
+	// 						this.channels[i - 1].mate.cableEmulation = json.mates[txKey].cable_emulation
+	// 					}
+	// 					if (json.mates[txKey].capsule != undefined) {
+	// 						this.channels[i - 1].mate.capsule = json.mates[txKey].capsule
+	// 					}
+	// 					if (json.mates[txKey].identification != undefined) {
+	// 						this.channels[i - 1].mate.identification = json.mates[txKey].identification
+	// 					}
+	// 					if (json.mates[txKey].led != undefined) {
+	// 						this.channels[i - 1].mate.led = json.mates[txKey].led
+	// 					}
+	// 					if (json.mates[txKey].lock != undefined) {
+	// 						this.channels[i - 1].mate.lock = json.mates[txKey].lock
+	// 					}
+	// 					if (json.mates[txKey].lowcut != undefined) {
+	// 						this.channels[i - 1].mate.lowcut = json.mates[txKey].lowcut
+	// 					}
+	// 					if (json.mates[txKey].mute != undefined) {
+	// 						this.channels[i - 1].mate.muted = json.mates[txKey].mute
+	// 					}
+	// 					if (json.mates[txKey].name != undefined) {
+	// 						this.channels[i - 1].mate.name = json.mates[txKey].name
+	// 					}
+	// 					if (json.mates[txKey].trim != undefined) {
+	// 						this.channels[i - 1].mate.trim = json.mates[txKey].trim
+	// 					}
+	// 					if (json.mates[txKey].type != undefined) {
+	// 						this.channels[i - 1].mate.type = json.mates[txKey].type
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+
+	// 		for (let i = 1; i <= this.channels.length; i++) {
+	// 			const rxKey = `rx${i}`
+	// 			if (json[rxKey]) {
+	// 				const rxData = json[rxKey]
+	// 				const channel = this.channels[i - 1]
+
+	// 				if (rxData.warnings !== undefined) {
+	// 					channel.hasAes256Error = false
+	// 					channel.hasAfPeakWarning = false
+	// 					channel.warnings = rxData.warnings.length > 0
+	// 					if (channel.warnings) {
+	// 						if (rxData.warnings.includes('Aes256Error')) {
+	// 							channel.hasAes256Error = true
+	// 						}
+	// 						if (rxData.warnings.includes('AfPeak')) {
+	// 							channel.hasAfPeakWarning = true
+	// 						}
+	// 					}
+	// 				}
+
+	// 				if (rxData.frequency !== undefined) {
+	// 					channel.frequency = rxData.frequency
+	// 				}
+
+	// 				if (rxData.name !== undefined) {
+	// 					channel.name = rxData.name
+	// 				}
+
+	// 				if (rxData.mute !== undefined) {
+	// 					channel.muted = rxData.mute
+	// 				}
+
+	// 				if (rxData.gain !== undefined) {
+	// 					channel.gain = rxData.gain
+	// 				}
+
+	// 				if (rxData.identification?.visual != undefined) {
+	// 					channel.identification = rxData.identification.visual
+	// 				}
+
+	// 				if (rxData.sync_settings != undefined) {
+	// 					if (rxData.sync_settings.trim_ignore != undefined) {
+	// 						channel.syncIgnoreTrim = rxData.sync_settings.trim_ignore
+	// 					}
+	// 					if (rxData.sync_settings.name_ignore != undefined) {
+	// 						channel.syncIgnoreName = rxData.sync_settings.name_ignore
+	// 					}
+	// 					if (rxData.sync_settings.mute_config_ignore != undefined) {
+	// 						channel.syncIgnoreMuteConfig = rxData.sync_settings.mute_config_ignore
+	// 					}
+	// 					if (rxData.sync_settings.lowcut_ignore != undefined) {
+	// 						channel.syncIgnoreLowcut = rxData.sync_settings.lowcut_ignore
+	// 					}
+	// 					if (rxData.sync_settings.lock_ignore != undefined) {
+	// 						channel.syncIgnoreLock = rxData.sync_settings.lock_ignore
+	// 					}
+	// 					if (rxData.sync_settings.led_ignore != undefined) {
+	// 						channel.syncIgnoreLED = rxData.sync_settings.led_ignore
+	// 					}
+	// 					if (rxData.sync_settings.frequency_ignore != undefined) {
+	// 						channel.syncIgnoreFrequency = rxData.sync_settings.frequency_ignore
+	// 					}
+	// 					if (rxData.sync_settings.cable_emulation_ignore != undefined) {
+	// 						channel.syncIgnoreCableEmulation = rxData.sync_settings.cable_emulation_ignore
+	// 					}
+	// 					if (rxData.sync_settings.trim != undefined) {
+	// 						channel.syncTrim = rxData.sync_settings.trim
+	// 					}
+	// 					if (rxData.sync_settings.mute_config_ts != undefined) {
+	// 						channel.syncMuteConfigTS = rxData.sync_settings.mute_config_ts
+	// 					}
+	// 					if (rxData.sync_settings.mute_config != undefined) {
+	// 						channel.syncMuteConfig = rxData.sync_settings.mute_config
+	// 					}
+	// 					if (rxData.sync_settings.lowcut != undefined) {
+	// 						channel.syncLowcut = rxData.sync_settings.lowcut
+	// 					}
+	// 					if (rxData.sync_settings.lock != undefined) {
+	// 						channel.syncLock = rxData.sync_settings.lock
+	// 					}
+	// 					if (rxData.sync_settings.led != undefined) {
+	// 						channel.syncLED = rxData.sync_settings.led
+	// 					}
+	// 					if (rxData.sync_settings.cable_emulation != undefined) {
+	// 						channel.syncCableEmulation = rxData.sync_settings.cable_emulation
+	// 					}
+	// 				}
+	// 			}
+	// 		}
+	// 		this.context.checkFeedbacks()
+	// 		for (let i = 1; i <= this.channels.length; i++) {
+	// 			this.channels[i - 1].publishVariableValues()
+	// 		}
+	// 	}
+
+	// 	close() {
+	// 		this.socket.close(() => {
+	// 			console.log('UDP Socket Closed')
+	// 		})
+	// 	}
 }
 
 class TxMate {
