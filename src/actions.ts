@@ -178,15 +178,30 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 				{
 					id: 'mute',
-					type: 'checkbox',
+					type: 'dropdown',
 					label: 'Mute',
-					default: true,
+					default: 'mute',
+					choices: [
+						{ id: 'mute', label: 'Mute' },
+						{ id: 'unmute', label: 'Unmute' },
+						{ id: 'toggle', label: 'Toggle' },
+					],
 				},
 			],
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
-				const mute = Boolean(action.options.mute)
-				self.receiver.channels[channel].setMuteState(mute)
+				const mute = String(action.options.mute)
+				switch (mute) {
+					case 'mute':
+						self.receiver.channels[channel].setMuteState(true)
+						break
+					case 'unmute':
+						self.receiver.channels[channel].setMuteState(false)
+						break
+					case 'toggle':
+						self.receiver.channels[channel].toggleMuteState()
+						break
+				}
 			},
 		},
 		rx_ss_mute_config_sk: {
@@ -438,6 +453,56 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const gain = Number(action.options.gain)
 				self.receiver.channels[channel].setGain(gain)
+			},
+		},
+		rx_gain_relative: {
+			name: 'RX: Increase/Decrease Gain',
+			options: [
+				{
+					id: 'receiver',
+					type: 'dropdown',
+					label: 'Receiver Channel',
+					default: 0,
+					choices: getChannelOptions(),
+				},
+				{
+					id: 'direction',
+					type: 'dropdown',
+					label: 'Adjustment',
+					default: 'increase',
+					choices: [
+						{ id: 'increase', label: 'Increase' },
+						{ id: 'decrease', label: 'Decrease' },
+					],
+				},
+				{
+					id: 'steps',
+					type: 'number',
+					label: 'Steps',
+					default: 1,
+					min: 1,
+					max: 15,
+				},
+			],
+			callback: async (action) => {
+				const channel = Number(action.options.receiver)
+				const direction = String(action.options.direction)
+				const steps = Number(action.options.steps)
+				const availableGains = Array.from({ length: 16 }, (_, i) => -3 + i * 3)
+
+				const currentGain = self.receiver.channels[channel].gain
+				let index = availableGains.indexOf(currentGain)
+
+				if (direction === 'increase') {
+					index = Math.min(index + steps, availableGains.length - 1)
+				} else if (direction === 'decrease') {
+					index = Math.max(index - steps, 0)
+				} else {
+					console.error('Invalid gain adjustment')
+				}
+
+				const newGain = availableGains[index]
+				self.receiver.channels[channel].setGain(newGain)
 			},
 		},
 		rx_freq: {
