@@ -164,8 +164,10 @@ export class EWDXReceiver {
 		this.sendCommand('/device/identity/version', null)
 		this.sendCommand('/device/identity/serial', null)
 		this.sendCommand('/device/frequency_code', null)
-		this.sendCommand('/device/network/dante/interfaces', null)
-		this.sendCommand('/device/network/dante/macs', null)
+		if (this.model == ReceiverModel.EM4 || this.model == ReceiverModel.EM2_DANTE) {
+			this.sendCommand('/device/network/dante/interfaces', null)
+			this.sendCommand('/device/network/dante/macs', null)
+		}
 		this.sendCommand('/device/network/ether/interfaces', null)
 		this.sendCommand('/device/network/ether/macs', null)
 	}
@@ -182,26 +184,6 @@ export class EWDXReceiver {
 			receiver_firmwareVersion: this.firmwareVersion,
 			receiver_identification: this.identification,
 			receiver_serialNumber: this.serialNumber,
-			dante_interface_mapping: this.danteInterfaceMapping,
-			dante_primary_netmask_dhcp: this.dantePrimary.netmask,
-			dante_primary_manual_netmask: this.dantePrimary.manualNetmask,
-			dante_primary_ip_dhcp: this.dantePrimary.ip,
-			dante_primary_ip_manual: this.dantePrimary.manualIP,
-			dante_primary_gateway_dhcp: this.dantePrimary.gateway,
-			dante_primary_gateway_manual: this.dantePrimary.manualGateway,
-			dante_primary_dhcp: this.dantePrimary.dhcp,
-			dante_primary_interface_name: this.dantePrimary.name,
-			dante_primary_mac: this.dantePrimary.mac,
-			dante_secondary_netmask_dhcp: this.danteSecondary.netmask,
-			dante_secondary_manual_netmask: this.danteSecondary.manualNetmask,
-			dante_secondary_ip_dhcp: this.danteSecondary.ip,
-			dante_secondary_ip_manual: this.danteSecondary.manualIP,
-			dante_secondary_gateway_dhcp: this.danteSecondary.gateway,
-			dante_secondary_gateway_manual: this.danteSecondary.manualGateway,
-			dante_secondary_dhcp: this.danteSecondary.dhcp,
-			dante_secondary_interface_name: this.danteSecondary.name,
-			dante_secondary_mac: this.danteSecondary.mac,
-			device_dante_version: this.danteVersion,
 			device_netmask_dhcp: this.networkInterface.netmask,
 			device_manual_netmask: this.networkInterface.manualNetmask,
 			device_ip_dhcp: this.networkInterface.ip,
@@ -210,6 +192,30 @@ export class EWDXReceiver {
 			device_gateway_manual: this.networkInterface.manualGateway,
 			device_dhcp: this.networkInterface.dhcp,
 			device_mdns: this.mdns,
+			...(this.model == ReceiverModel.EM4 || this.model == ReceiverModel.EM2_DANTE
+				? {
+						dante_interface_mapping: this.danteInterfaceMapping,
+						dante_primary_netmask_dhcp: this.dantePrimary.netmask,
+						dante_primary_manual_netmask: this.dantePrimary.manualNetmask,
+						dante_primary_ip_dhcp: this.dantePrimary.ip,
+						dante_primary_ip_manual: this.dantePrimary.manualIP,
+						dante_primary_gateway_dhcp: this.dantePrimary.gateway,
+						dante_primary_gateway_manual: this.dantePrimary.manualGateway,
+						dante_primary_dhcp: this.dantePrimary.dhcp,
+						dante_primary_interface_name: this.dantePrimary.name,
+						dante_primary_mac: this.dantePrimary.mac,
+						dante_secondary_netmask_dhcp: this.danteSecondary.netmask,
+						dante_secondary_manual_netmask: this.danteSecondary.manualNetmask,
+						dante_secondary_ip_dhcp: this.danteSecondary.ip,
+						dante_secondary_ip_manual: this.danteSecondary.manualIP,
+						dante_secondary_gateway_dhcp: this.danteSecondary.gateway,
+						dante_secondary_gateway_manual: this.danteSecondary.manualGateway,
+						dante_secondary_dhcp: this.danteSecondary.dhcp,
+						dante_secondary_interface_name: this.danteSecondary.name,
+						dante_secondary_mac: this.danteSecondary.mac,
+						device_dante_version: this.danteVersion,
+					}
+				: {}),
 		})
 	}
 
@@ -286,7 +292,7 @@ export class EWDXReceiver {
 			this.sendMessage(JSON.stringify(msgRX1))
 		}, 1000)
 
-		if (this.model === ReceiverModel.EM4 || this.model === ReceiverModel.EM2_DANTE) {
+		if (this.model === ReceiverModel.EM4) {
 			const msgRX2 = {
 				osc: {
 					state: {
@@ -337,7 +343,7 @@ export class EWDXReceiver {
 							mates: {
 								tx1: { ...defaultTxSettings },
 								tx2: { ...defaultTxSettings },
-								...(this.model === ReceiverModel.EM4 || this.model === ReceiverModel.EM2_DANTE
+								...(this.model === ReceiverModel.EM4
 									? {
 											tx3: { ...defaultTxSettings },
 											tx4: { ...defaultTxSettings },
@@ -349,7 +355,7 @@ export class EWDXReceiver {
 							m: {
 								rx1: { divi: null, rsqi: null },
 								rx2: { divi: null, rsqi: null },
-								...(this.model === ReceiverModel.EM4 || this.model === ReceiverModel.EM2_DANTE
+								...(this.model === ReceiverModel.EM4
 									? {
 											rx3: { divi: null, rsqi: null },
 											rx4: { divi: null, rsqi: null },
@@ -404,22 +410,26 @@ export class EWDXReceiver {
 							},
 							device: {
 								network: {
-									dante: {
-										identity: {
-											version: null,
-										},
-										ipv4: {
-											netmask: null,
-											manual_netmask: null,
-											manual_ipaddr: null,
-											manual_gateway: null,
-											ipaddr: null,
-											gateway: null,
-											auto: null,
-											macs: null,
-										},
-										interface_mapping: null,
-									},
+									...(this.model === ReceiverModel.EM4 || this.model === ReceiverModel.EM2_DANTE
+										? {
+												dante: {
+													identity: {
+														version: null,
+													},
+													ipv4: {
+														netmask: null,
+														manual_netmask: null,
+														manual_ipaddr: null,
+														manual_gateway: null,
+														ipaddr: null,
+														gateway: null,
+														auto: null,
+														macs: null,
+													},
+													interface_mapping: null,
+												},
+											}
+										: {}),
 									ipv4: {
 										manual_netmask: null,
 										manual_ipaddr: null,
