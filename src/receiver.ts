@@ -1,4 +1,3 @@
-/* eslint-disable @typescript-eslint/explicit-module-boundary-types */
 import { RemoteInfo } from 'dgram'
 import { ModuleInstance } from './main.js'
 import { SharedUdpSocket } from '@companion-module/base'
@@ -31,7 +30,6 @@ class NetworkInterface {
 }
 
 export class EWDXReceiver {
-	// private udpSocket
 	private socket: SharedUdpSocket
 	host: string
 	context: ModuleInstance
@@ -86,7 +84,6 @@ export class EWDXReceiver {
 			this.channels[3] = new RxChannel(4, this)
 		}
 
-		// this.udpSocket = createSocket('udp4')
 		this.socket = context.createSharedUdpSocket('udp4', (msg, rinfo) => this.parseMessage(msg, rinfo))
 
 		this.setupListeners()
@@ -103,35 +100,35 @@ export class EWDXReceiver {
 		}, pollingInterval)
 	}
 
-	restart() {
+	restart(): void {
 		this.sendCommand('/device/restart', true)
 	}
 
-	setBrightness(brightness: number) {
+	setBrightness(brightness: number): void {
 		this.sendCommand('/device/brightness', brightness)
 	}
 
-	setName(name: string) {
+	setName(name: string): void {
 		this.sendCommand('/device/name', name)
 	}
 
-	setLocation(location: string) {
+	setLocation(location: string): void {
 		this.sendCommand('/device/location', location)
 	}
 
-	setAutoLock(lock: boolean) {
+	setAutoLock(lock: boolean): void {
 		this.sendCommand('/device/lock', lock)
 	}
 
-	setEncryption(encryption: boolean) {
+	setEncryption(encryption: boolean): void {
 		this.sendCommand('/device/encryption', encryption)
 	}
 
-	setLinkDensityMode(enable: boolean) {
+	setLinkDensityMode(enable: boolean): void {
 		this.sendCommand('/device/link_density_mode', enable)
 	}
 
-	setNetworkSettings(dhcp: boolean, mdns: boolean, ip: string, netmask: string, gateway: string) {
+	setNetworkSettings(dhcp: boolean, mdns: boolean, ip: string, netmask: string, gateway: string): void {
 		this.sendCommand('/device/network/ipv4/auto', dhcp)
 		this.sendCommand('/device/network/mdns', mdns)
 		if (ip != '' && ip != null) this.sendCommand('/device/network/ipv4/manual_ipaddr', ip)
@@ -140,7 +137,7 @@ export class EWDXReceiver {
 	}
 
 	//ToDo: Further checking needed - trying to set only one DHCP option and setting the other value to null is not working
-	setDanteNetworkSettings(interfaceId: number, dhcp: boolean, ip: string, netmask: string, gateway: string) {
+	setDanteNetworkSettings(interfaceId: number, dhcp: boolean, ip: string, netmask: string, gateway: string): void {
 		this.sendCommand('/device/network/dante/ipv4/auto', interfaceId == 0 ? [dhcp, null] : [null, dhcp])
 		if (ip != '' && ip != null)
 			this.sendCommand('/device/network/dante/ipv4/manual_ipaddr', interfaceId == 0 ? [ip, null] : [null, ip])
@@ -156,11 +153,11 @@ export class EWDXReceiver {
 			)
 	}
 
-	setDantePortMapping(mapping: DantePortMapping) {
+	setDantePortMapping(mapping: DantePortMapping): void {
 		this.sendCommand('/device/network/dante/interface_mapping', DantePortMapping[mapping])
 	}
 
-	getStaticInformation() {
+	getStaticInformation(): void {
 		this.sendCommand('/device/identity/version', null)
 		this.sendCommand('/device/identity/serial', null)
 		this.sendCommand('/device/frequency_code', null)
@@ -172,7 +169,7 @@ export class EWDXReceiver {
 		this.sendCommand('/device/network/ether/macs', null)
 	}
 
-	publishVariableValues() {
+	publishVariableValues(): void {
 		this.context.setVariableValues({
 			receiver_brightness: this.brightness,
 			receiver_autoLock: this.lock,
@@ -219,7 +216,7 @@ export class EWDXReceiver {
 		})
 	}
 
-	sendCommand(path: string, value: any) {
+	sendCommand(path: string, value: boolean | number | string | object | null): void {
 		const cmd = oscToJson(path, value)
 		const message = JSON.stringify(cmd)
 		this.sendMessage(message)
@@ -244,7 +241,7 @@ export class EWDXReceiver {
 		})
 	}
 
-	initSubscriptions() {
+	initSubscriptions(): void {
 		const defaultRxSettings = {
 			warnings: null,
 			divi: null,
@@ -889,7 +886,7 @@ class RxChannel {
 		this.hasAfPeakWarning = false
 	}
 
-	publishVariableValues() {
+	publishVariableValues(): void {
 		this.parentDevice.context.setVariableValues({
 			[`rx${this.index}_name`]: this.name,
 			[`rx${this.index}_activeAntenna`]: this.activeAntenna,
@@ -933,52 +930,52 @@ class RxChannel {
 		})
 	}
 
-	setMuteState(state: boolean) {
+	setMuteState(state: boolean): void {
 		const command = '/rx' + this.index + '/mute'
 		this.parentDevice.sendCommand(command, state)
 	}
 
-	toggleMuteState() {
+	toggleMuteState(): void {
 		const command = '/rx' + this.index + '/mute'
 		this.parentDevice.sendCommand(command, !this.muted)
 	}
 
-	setMuteConfigSK(muteConfig: MuteOptions) {
+	setMuteConfigSK(muteConfig: MuteOptions): void {
 		const command = '/rx' + this.index + '/sync_settings/mute_config'
 		this.parentDevice.sendCommand(command, MuteOptions[muteConfig])
 	}
 
-	setMuteConfigTable(muteConfig: MuteOptionsTable) {
+	setMuteConfigTable(muteConfig: MuteOptionsTable): void {
 		const command = '/rx' + this.index + '/sync_settings/mute_config_ts'
 		this.parentDevice.sendCommand(command, MuteOptionsTable[muteConfig])
 	}
 
-	setLowcut(lowcut: LowcutOptions) {
+	setLowcut(lowcut: LowcutOptions): void {
 		const command = '/rx' + this.index + '/sync_settings/lowcut'
 		this.parentDevice.sendCommand(command, LowcutOptions[lowcut])
 	}
 
-	setAutoLock(lock: boolean) {
+	setAutoLock(lock: boolean): void {
 		const command = '/rx' + this.index + '/sync_settings/lock'
 		this.parentDevice.sendCommand(command, lock)
 	}
 
-	setTXLED(led: boolean) {
+	setTXLED(led: boolean): void {
 		const command = '/rx' + this.index + '/sync_settings/led'
 		this.parentDevice.sendCommand(command, led)
 	}
 
-	setSyncIgnore(setting: SyncSettings, ignore: boolean) {
+	setSyncIgnore(setting: SyncSettings, ignore: boolean): void {
 		const command = '/rx' + this.index + '/sync_settings/' + SyncSettings[setting]
 		this.parentDevice.sendCommand(command, ignore)
 	}
 
-	setCableEmulation(mode: CableEmulationOptions) {
+	setCableEmulation(mode: CableEmulationOptions): void {
 		const command = '/rx' + this.index + '/sync_settings/cable_emulation'
 		this.parentDevice.sendCommand(command, CableEmulationOptions[mode])
 	}
 
-	setName(name: string) {
+	setName(name: string): void {
 		if (name.length > 8) {
 			name = name.substring(0, 8)
 		}
@@ -987,22 +984,22 @@ class RxChannel {
 		this.parentDevice.sendCommand(command, name)
 	}
 
-	setGain(gain: number) {
+	setGain(gain: number): void {
 		const command = '/rx' + this.index + '/gain'
 		this.parentDevice.sendCommand(command, gain)
 	}
 
-	setFrequency(freq: number) {
+	setFrequency(freq: number): void {
 		const command = '/rx' + this.index + '/frequency'
 		this.parentDevice.sendCommand(command, freq)
 	}
 
-	setIdentification(blink: boolean) {
+	setIdentification(blink: boolean): void {
 		const command = '/rx' + this.index + '/identification/visual'
 		this.parentDevice.sendCommand(command, blink)
 	}
 
-	identify() {
+	identify(): void {
 		this.parentDevice.sendCommand('/rx' + this.index + '/identification/visual', true)
 	}
 }
