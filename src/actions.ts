@@ -52,11 +52,13 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'textinput',
 					label: 'Name (max. 18 Chars - no special characters or blanks)',
 					default: '',
+					useVariables: true,
 				},
 			],
 			callback: async (action) => {
 				const name = String(action.options.name)
-				self.receiver.setName(name)
+				const parsedName = await self.parseVariablesInString(name)
+				self.receiver.setName(parsedName)
 			},
 		},
 		location: {
@@ -420,12 +422,14 @@ export function UpdateActions(self: ModuleInstance): void {
 					type: 'textinput',
 					label: 'Name',
 					default: '',
+					useVariables: true,
 				},
 			],
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const name = String(action.options.name)
-				self.receiver.channels[channel].setName(name)
+				const parsedName = await self.parseVariablesInString(name)
+				self.receiver.channels[channel].setName(parsedName)
 			},
 		},
 		rx_gain: {
