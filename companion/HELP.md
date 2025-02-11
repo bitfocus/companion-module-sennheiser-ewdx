@@ -1,5 +1,9 @@
 # Sennheiser EW DX Series
 
+## Important notice
+
+This help file can't be displayed correctly inside of Companion - you can access the [web version here](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/companion/HELP.md)
+
 ## Getting started
 
 Just select the device from the module config window and enter the control IP of your EM2/EM4 receiver or network charger and press 'Save'. To control multiple devices, just add the connection several times to your Companion instance.
