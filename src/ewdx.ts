@@ -91,7 +91,7 @@ export abstract class EWDX {
 	}
 
 	public sendMessage(message: string): void {
-		this.socket.send(message, 4545, this.host)
+		this.socket.send(message, 45, this.host)
 	}
 
 	private setupListeners() {

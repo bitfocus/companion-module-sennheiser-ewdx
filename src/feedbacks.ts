@@ -11,7 +11,7 @@ import {
 	OptionsCircle,
 	// eslint-disable-next-line n/no-missing-import
 } from 'companion-module-utils/dist/graphics.js'
-import { DeviceModel } from './receiver.js'
+import { DeviceModel } from './ewdx.js'
 import { ChargingBayState, ChargingBayWarnings, ChargingDevice, CHG70N } from './chg70n.js'
 
 export function UpdateFeedbacks(self: ModuleInstance): void {

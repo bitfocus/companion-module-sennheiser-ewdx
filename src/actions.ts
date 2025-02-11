@@ -9,7 +9,7 @@ import {
 	SyncSettings,
 	EWDXReceiver,
 } from './ewdxReceiver.js'
-import { DeviceModel } from './receiver.js'
+import { DeviceModel } from './ewdx.js'
 import { CHG70N } from './chg70n.js'
 
 export function UpdateActions(self: ModuleInstance): void {

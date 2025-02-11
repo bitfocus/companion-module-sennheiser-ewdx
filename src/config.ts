@@ -1,5 +1,5 @@
 import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
-import { DeviceModel } from './receiver.js'
+import { DeviceModel } from './ewdx.js'
 
 export interface ModuleConfig {
 	host: string

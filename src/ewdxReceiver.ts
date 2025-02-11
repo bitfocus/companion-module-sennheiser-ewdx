@@ -1,5 +1,5 @@
 import { ModuleInstance } from './main.js'
-import { DeviceModel, EWDX, NetworkInterface, UNKNOWN } from './receiver.js'
+import { DeviceModel, EWDX, NetworkInterface, UNKNOWN } from './ewdx.js'
 
 export class EWDXReceiver extends EWDX {
 	firmwareVersion: string

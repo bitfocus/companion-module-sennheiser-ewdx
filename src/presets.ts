@@ -1,6 +1,6 @@
 import { combineRgb, CompanionPresetDefinitions } from '@companion-module/base'
 import { ModuleInstance } from './main.js'
-import { DeviceModel } from './receiver.js'
+import { DeviceModel } from './ewdx.js'
 import { EWDXReceiver } from './ewdxReceiver.js'
 import { CHG70N } from './chg70n.js'
 

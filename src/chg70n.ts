@@ -1,6 +1,6 @@
 import { CableEmulationOptions, LowcutOptions, MuteOptions } from './ewdxReceiver.js'
 import { ModuleInstance } from './main.js'
-import { DeviceModel, EWDX, UNKNOWN } from './receiver.js'
+import { DeviceModel, EWDX, UNKNOWN } from './ewdx.js'
 
 export enum ChargingDevice {
 	'EW-DX SK',

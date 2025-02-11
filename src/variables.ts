@@ -1,6 +1,6 @@
 import { EWDXReceiver } from './ewdxReceiver.js'
 import type { ModuleInstance } from './main.js'
-import { DeviceModel } from './receiver.js'
+import { DeviceModel } from './ewdx.js'
 import { CHG70N } from './chg70n.js'
 
 export function UpdateVariableDefinitions(self: ModuleInstance): void {
