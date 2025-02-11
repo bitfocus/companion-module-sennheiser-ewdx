@@ -19,31 +19,31 @@ In the module presets you will find a status display for every receiver channel 
 
 Beside this information the following icons are used:
 
-![AF Peak](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/afpeak.png) AF Peak
+![AF Peak](./assets/icons/afpeak.png) AF Peak
 
-![Warning](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/warning.png) Warning - one or more warnings are currently present on the receiver channel
+![Warning](./assets/icons/warning.png) Warning - one or more warnings are currently present on the receiver channel
 
-![Encryption Disabled](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/encryption_disabled.png) Encryption - Disabled
+![Encryption Disabled](./assets/icons/encryption_disabled.png) Encryption - Disabled
 
-![Encryption Enabled](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/encryption_enabled.png) Encryption - Enabled
+![Encryption Enabled](./assets/icons/encryption_enabled.png) Encryption - Enabled
 
-![Encryption Error](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/encryption_error.png) Encryption - Error (for example because Encryption was disabled and enabled again without syncing the transmitters again)
+![Encryption Error](./assets/icons/encryption_error.png) Encryption - Error (for example because Encryption was disabled and enabled again without syncing the transmitters again)
 
-![Mute](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/mute.png) Muted - Either the transmitter or receiver is muted
+![Mute](./assets/icons/mute.png) Muted - Either the transmitter or receiver is muted
 
-![RSQI Green](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/rsqi_green.png) RSQI - Good signal (> 70%)
+![RSQI Green](./assets/icons/rsqi_green.png) RSQI - Good signal (> 70%)
 
-![RSQI Yellow](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/rsqi_yellow.png) RSQI - Medium signal (> 40%)
+![RSQI Yellow](./assets/icons/rsqi_yellow.png) RSQI - Medium signal (> 40%)
 
-![RSQI Red](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/rsqi_red.png) RSQI - Bad signal (>= 1%)
+![RSQI Red](./assets/icons/rsqi_red.png) RSQI - Bad signal (>= 1%)
 
-![RSQI Grey](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/rsqi_grey.png) RSQI - No signal / No RSQI information (0%)
+![RSQI Grey](./assets/icons/rsqi_grey.png) RSQI - No signal / No RSQI information (0%)
 
-![Ant A](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/ant_a.png) Antenna - A is currently receiving
+![Ant A](./assets/icons/ant_a.png) Antenna - A is currently receiving
 
-![Ant B](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/ant_b.png) Antenna - B is currently receiving
+![Ant B](./assets/icons/ant_b.png) Antenna - B is currently receiving
 
-![Battery](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/battery_green.png) Battery - Shows the remaining battery percentage (> 50% Green, >= 20% Yellow, < 20% Red)
+![Battery](./assets/icons/battery_green.png) Battery - Shows the remaining battery percentage (> 50% Green, >= 20% Yellow, < 20% Red)
 
 When the RX identification is active (either by triggering from Companion or by pressing the Power Button on a transmitter), a green bar at the bottom of the button is shown. If you are using the preset, the identify action will be already assigned to the button.
 
@@ -57,18 +57,18 @@ In the module presets you will find a status display for every charging bay of y
 
 Beside this information the following icons are used:
 
-![Warning](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/warning.png) Warning - one or more warnings are currently present on the charging bay
+![Warning](./assets/icons/warning.png) Warning - one or more warnings are currently present on the charging bay
 
-![Charging Error](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/charging_error.png) Charging Error - The battery can either not get charged or discharged
+![Charging Error](./assets/icons/charging_error.png) Charging Error - The battery can either not get charged or discharged
 
-![Communication Error](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/communication_error.png) Communication Error - The charger can't communicate with the battery
+![Communication Error](./assets/icons/communication_error.png) Communication Error - The charger can't communicate with the battery
 
-![Temperature Error](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/temperature_error.png) Temperature Error - The battery temperature is outside of the supported range (either too cold or too hot)
+![Temperature Error](./assets/icons/temperature_error.png) Temperature Error - The battery temperature is outside of the supported range (either too cold or too hot)
 
-![Overcurrent Error](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/overcurrent_error.png) Overcurrent Error - An overcurrent was detected
+![Overcurrent Error](./assets/icons/overcurrent_error.png) Overcurrent Error - An overcurrent was detected
 
-![Green Dot](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/dot_green.png) Bay State: normal
+![Green Dot](./assets/icons/dot_green.png) Bay State: normal
 
-![Red Dot](https://github.com/bitfocus/companion-module-sennheiser-ewdx/blob/main/assets/icons/dot_red.png) Bay State: not normal - the current bay state is either UPDATE, ERROR, or DFU_MODE
+![Red Dot](./assets/icons/dot_red.png) Bay State: not normal - the current bay state is either UPDATE, ERROR, or DFU_MODE
 
 When the bay identification is active, a green bar at the bottom of the button is shown. If you are using the preset, the identify action will be already assigned to the button.
