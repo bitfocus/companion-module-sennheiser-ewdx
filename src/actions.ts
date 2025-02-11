@@ -6,28 +6,115 @@ import {
 	LowcutOptions,
 	MuteOptions,
 	MuteOptionsTable,
-	ReceiverModel,
 	SyncSettings,
-} from './receiver.js'
+	EWDXReceiver,
+} from './ewdxReceiver.js'
+import { DeviceModel } from './receiver.js'
+import { CHG70N } from './chg70n.js'
 
 export function UpdateActions(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
-		const maxChannels = self.receiver.model === ReceiverModel.EM4 ? 4 : 2
+		const maxChannels = self.device.model === DeviceModel.EM4 ? 4 : 2
 		return Array.from({ length: maxChannels }, (_, i) => ({
 			id: i,
 			label: `Channel ${i + 1}`,
 		}))
 	}
 
-	const actions: CompanionActionDefinitions = {
-		restart: {
-			name: 'Device: Restart',
-			options: [],
-			callback: async () => {
-				self.receiver.restart()
-			},
+	const actions: CompanionActionDefinitions = {}
+
+	actions.restart = {
+		name: 'Device: Restart',
+		options: [],
+		callback: async () => {
+			self.device.restart()
 		},
-		brightness: {
+	}
+
+	actions.name = {
+		name: 'Device: Set Name',
+		options: [
+			{
+				id: 'name',
+				type: 'textinput',
+				label: 'Name (max. 18 Chars - no special characters or blanks)',
+				default: '',
+				useVariables: true,
+			},
+		],
+		callback: async (action) => {
+			const name = String(action.options.name)
+			const parsedName = await self.parseVariablesInString(name)
+			self.device.setName(parsedName)
+		},
+	}
+
+	actions.location = {
+		name: 'Device: Set Location',
+		options: [
+			{
+				id: 'location',
+				type: 'textinput',
+				label: 'Location (max. 400 Chars)',
+				default: '',
+			},
+		],
+		callback: async (action) => {
+			const location = String(action.options.location)
+			self.device.setLocation(location)
+		},
+	}
+
+	actions.networkSettings = {
+		name: 'Device: Change Network Settings',
+		options: [
+			{
+				id: 'dhcp',
+				type: 'checkbox',
+				label: 'DHCP',
+				default: false,
+			},
+			{
+				id: 'mdns',
+				type: 'checkbox',
+				label: 'MDNS',
+				default: true,
+			},
+			{
+				id: 'ip',
+				type: 'textinput',
+				label: 'IP Address',
+				default: '192.168.0.2',
+				regex: Regex.IP,
+			},
+			{
+				id: 'netmask',
+				type: 'textinput',
+				label: 'Netmask',
+				default: '255.255.255.0',
+				regex: Regex.IP,
+			},
+			{
+				id: 'gateway',
+				type: 'textinput',
+				label: 'Gateway',
+				default: '192.168.0.1',
+				regex: Regex.IP,
+			},
+		],
+		callback: async (action) => {
+			const dhcp = Boolean(action.options.dhcp)
+			const mdns = Boolean(action.options.mdns)
+			const ip = String(action.options.ip)
+			const netmask = String(action.options.netmask)
+			const gateway = String(action.options.gateway)
+			self.device.setNetworkSettings(dhcp, mdns, ip, netmask, gateway)
+		},
+	}
+
+	if (self.device instanceof EWDXReceiver) {
+		const receiver: EWDXReceiver = self.device
+		actions.brightness = {
 			name: 'Device: Set Brightness',
 			options: [
 				{
@@ -41,42 +128,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const brightness = Number(action.options.brightness)
-				self.receiver.setBrightness(brightness)
+				receiver.setBrightness(brightness)
 			},
-		},
-		name: {
-			name: 'Device: Set Name',
-			options: [
-				{
-					id: 'name',
-					type: 'textinput',
-					label: 'Name (max. 18 Chars - no special characters or blanks)',
-					default: '',
-					useVariables: true,
-				},
-			],
-			callback: async (action) => {
-				const name = String(action.options.name)
-				const parsedName = await self.parseVariablesInString(name)
-				self.receiver.setName(parsedName)
-			},
-		},
-		location: {
-			name: 'Device: Set Location',
-			options: [
-				{
-					id: 'location',
-					type: 'textinput',
-					label: 'Location (max. 400 Chars)',
-					default: '',
-				},
-			],
-			callback: async (action) => {
-				const location = String(action.options.location)
-				self.receiver.setLocation(location)
-			},
-		},
-		autolock: {
+		}
+		actions.autolock = {
 			name: 'Device: Set Auto Lock',
 			options: [
 				{
@@ -88,10 +143,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const lock = Boolean(action.options.lock)
-				self.receiver.setAutoLock(lock)
+				receiver.setAutoLock(lock)
 			},
-		},
-		encryption: {
+		}
+		actions.encryption = {
 			name: 'Device: Set Encryption',
 			options: [
 				{
@@ -103,10 +158,11 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const encryption = Boolean(action.options.encryption)
-				self.receiver.setEncryption(encryption)
+				receiver.setEncryption(encryption)
 			},
-		},
-		link_density: {
+		}
+
+		actions.link_density = {
 			name: 'Device: Set Link Density Mode',
 			options: [
 				{
@@ -118,57 +174,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const linkdensity = Boolean(action.options.linkdensity)
-				self.receiver.setLinkDensityMode(linkdensity)
+				receiver.setLinkDensityMode(linkdensity)
 			},
-		},
-		network_settings: {
-			name: 'Device: Change Network Settings',
-			options: [
-				{
-					id: 'dhcp',
-					type: 'checkbox',
-					label: 'DHCP',
-					default: false,
-				},
-				{
-					id: 'mdns',
-					type: 'checkbox',
-					label: 'MDNS',
-					default: true,
-				},
-				{
-					id: 'ip',
-					type: 'textinput',
-					label: 'IP Address',
-					default: '192.168.0.2',
-					regex: Regex.IP,
-				},
-				{
-					id: 'netmask',
-					type: 'textinput',
-					label: 'Netmask',
-					default: '255.255.255.0',
-					regex: Regex.IP,
-				},
-				{
-					id: 'gateway',
-					type: 'textinput',
-					label: 'Gateway',
-					default: '192.168.0.1',
-					regex: Regex.IP,
-				},
-			],
-			callback: async (action) => {
-				const dhcp = Boolean(action.options.dhcp)
-				const mdns = Boolean(action.options.mdns)
-				const ip = String(action.options.ip)
-				const netmask = String(action.options.netmask)
-				const gateway = String(action.options.gateway)
-				self.receiver.setNetworkSettings(dhcp, mdns, ip, netmask, gateway)
-			},
-		},
-
-		rx_mute: {
+		}
+		actions.rx_mute = {
 			name: 'RX: Set Mute',
 			options: [
 				{
@@ -195,18 +204,18 @@ export function UpdateActions(self: ModuleInstance): void {
 				const mute = String(action.options.mute)
 				switch (mute) {
 					case 'mute':
-						self.receiver.channels[channel].setMuteState(true)
+						receiver.channels[channel].setMuteState(true)
 						break
 					case 'unmute':
-						self.receiver.channels[channel].setMuteState(false)
+						receiver.channels[channel].setMuteState(false)
 						break
 					case 'toggle':
-						self.receiver.channels[channel].toggleMuteState()
+						receiver.channels[channel].toggleMuteState()
 						break
 				}
 			},
-		},
-		rx_ss_mute_config_sk: {
+		}
+		actions.rx_ss_mute_config_sk = {
 			name: 'RX: Sync Settings: Mute Config [SK(M)]',
 			options: [
 				{
@@ -231,10 +240,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				self.receiver.channels[channel].setMuteConfigSK(muteSetting as MuteOptions)
+				receiver.channels[channel].setMuteConfigSK(muteSetting as MuteOptions)
 			},
-		},
-		rx_ss_mute_config_table: {
+		}
+		actions.rx_ss_mute_config_table = {
 			name: 'RX: Sync Settings: Mute Config [Table Stand]',
 			options: [
 				{
@@ -260,10 +269,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				self.receiver.channels[channel].setMuteConfigTable(muteSetting as MuteOptionsTable)
+				receiver.channels[channel].setMuteConfigTable(muteSetting as MuteOptionsTable)
 			},
-		},
-		rx_ss_ignore: {
+		}
+		actions.rx_ss_ignore = {
 			name: 'RX: Sync Settings: Ignore Parameters',
 			options: [
 				{
@@ -300,10 +309,10 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
 				const ignore = Boolean(action.options.ignore)
-				self.receiver.channels[channel].setSyncIgnore(setting as SyncSettings, ignore)
+				receiver.channels[channel].setSyncIgnore(setting as SyncSettings, ignore)
 			},
-		},
-		rx_ss_lowcut: {
+		}
+		actions.rx_ss_lowcut = {
 			name: 'RX: Sync Settings: Set Lowcut',
 			options: [
 				{
@@ -329,10 +338,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const lowcut = Number(action.options.lowcut)
-				self.receiver.channels[channel].setLowcut(lowcut as LowcutOptions)
+				receiver.channels[channel].setLowcut(lowcut as LowcutOptions)
 			},
-		},
-		rx_ss_lock: {
+		}
+		actions.rx_ss_lock = {
 			name: 'RX: Sync Settings: Set Auto Lock',
 			options: [
 				{
@@ -352,10 +361,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const lock = Boolean(action.options.lock)
-				self.receiver.channels[channel].setAutoLock(lock)
+				receiver.channels[channel].setAutoLock(lock)
 			},
-		},
-		rx_ss_tx_led: {
+		}
+		actions.rx_ss_tx_led = {
 			name: 'RX: Sync Settings: Set TX LED',
 			options: [
 				{
@@ -375,10 +384,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const enabled = Boolean(action.options.enabled)
-				self.receiver.channels[channel].setTXLED(enabled)
+				receiver.channels[channel].setTXLED(enabled)
 			},
-		},
-		rx_ss_cable_emulation: {
+		}
+		actions.rx_ss_cable_emulation = {
 			name: 'RX: Sync Settings: Set Cable Emulation',
 			options: [
 				{
@@ -404,10 +413,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
-				self.receiver.channels[channel].setCableEmulation(setting as CableEmulationOptions)
+				receiver.channels[channel].setCableEmulation(setting as CableEmulationOptions)
 			},
-		},
-		rx_name: {
+		}
+		actions.rx_name = {
 			name: 'RX: Set Name',
 			options: [
 				{
@@ -429,10 +438,10 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const name = String(action.options.name)
 				const parsedName = await self.parseVariablesInString(name)
-				self.receiver.channels[channel].setName(parsedName)
+				receiver.channels[channel].setName(parsedName)
 			},
-		},
-		rx_gain: {
+		}
+		actions.rx_gain = {
 			name: 'RX: Set Gain',
 			options: [
 				{
@@ -456,10 +465,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const gain = Number(action.options.gain)
-				self.receiver.channels[channel].setGain(gain)
+				receiver.channels[channel].setGain(gain)
 			},
-		},
-		rx_gain_relative: {
+		}
+		actions.rx_gain_relative = {
 			name: 'RX: Increase/Decrease Gain',
 			options: [
 				{
@@ -494,7 +503,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				const steps = Number(action.options.steps)
 				const availableGains = Array.from({ length: 16 }, (_, i) => -3 + i * 3)
 
-				const currentGain = self.receiver.channels[channel].gain
+				const currentGain = receiver.channels[channel].gain
 				let index = availableGains.indexOf(currentGain)
 
 				if (direction === 'increase') {
@@ -506,10 +515,10 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				const newGain = availableGains[index]
-				self.receiver.channels[channel].setGain(newGain)
+				receiver.channels[channel].setGain(newGain)
 			},
-		},
-		rx_freq: {
+		}
+		actions.rx_freq = {
 			name: 'RX: Set Frequency',
 			options: [
 				{
@@ -531,10 +540,10 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const freq = Number(action.options.frequency)
-				self.receiver.channels[channel].setFrequency(freq)
+				receiver.channels[channel].setFrequency(freq)
 			},
-		},
-		rx_identification: {
+		}
+		actions.rx_identification = {
 			name: 'RX: Enable/Disable Identification',
 			options: [
 				{
@@ -554,83 +563,101 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const ident = Boolean(action.options.ident)
-				self.receiver.channels[channel].setIdentification(ident)
-			},
-		},
-	}
-
-	/* Dante model specific actions  */
-
-	if (self.receiver.model === ReceiverModel.EM4 || self.receiver.model === ReceiverModel.EM2_DANTE) {
-		actions.dante_network_settings = {
-			name: 'Dante: Change Network Settings',
-			options: [
-				{
-					id: 'danteInterface',
-					type: 'dropdown',
-					label: 'Dante Interface',
-					default: 0,
-					choices: [
-						{ id: 0, label: 'Primary' },
-						{ id: 1, label: 'Secondary' },
-					],
-				},
-				{
-					id: 'dhcp',
-					type: 'checkbox',
-					label: 'DHCP',
-					default: false,
-				},
-				{
-					id: 'ip',
-					type: 'textinput',
-					label: 'IP Address',
-					default: '192.168.0.2',
-					regex: Regex.IP,
-				},
-				{
-					id: 'netmask',
-					type: 'textinput',
-					label: 'Netmask',
-					default: '255.255.255.0',
-					regex: Regex.IP,
-				},
-				{
-					id: 'gateway',
-					type: 'textinput',
-					label: 'Gateway',
-					default: '192.168.0.1',
-					regex: Regex.IP,
-				},
-			],
-			callback: async (action) => {
-				const interfaceId = Number(action.options.danteInterface)
-				const dhcp = Boolean(action.options.dhcp)
-				const ip = String(action.options.ip)
-				const netmask = String(action.options.netmask)
-				const gateway = String(action.options.gateway)
-				self.receiver.setDanteNetworkSettings(interfaceId, dhcp, ip, netmask, gateway)
+				receiver.channels[channel].setIdentification(ident)
 			},
 		}
-		actions.dante_port_mapping = {
-			name: 'Dante: Set Interface Port Mapping',
+
+		if (self.device instanceof EWDXReceiver) {
+			if (self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) {
+				const receiver: EWDXReceiver = self.device
+				actions.dante_network_settings = {
+					name: 'Dante: Change Network Settings',
+					options: [
+						{
+							id: 'danteInterface',
+							type: 'dropdown',
+							label: 'Dante Interface',
+							default: 0,
+							choices: [
+								{ id: 0, label: 'Primary' },
+								{ id: 1, label: 'Secondary' },
+							],
+						},
+						{
+							id: 'dhcp',
+							type: 'checkbox',
+							label: 'DHCP',
+							default: false,
+						},
+						{
+							id: 'ip',
+							type: 'textinput',
+							label: 'IP Address',
+							default: '192.168.0.2',
+							regex: Regex.IP,
+						},
+						{
+							id: 'netmask',
+							type: 'textinput',
+							label: 'Netmask',
+							default: '255.255.255.0',
+							regex: Regex.IP,
+						},
+						{
+							id: 'gateway',
+							type: 'textinput',
+							label: 'Gateway',
+							default: '192.168.0.1',
+							regex: Regex.IP,
+						},
+					],
+					callback: async (action) => {
+						const interfaceId = Number(action.options.danteInterface)
+						const dhcp = Boolean(action.options.dhcp)
+						const ip = String(action.options.ip)
+						const netmask = String(action.options.netmask)
+						const gateway = String(action.options.gateway)
+						receiver.setDanteNetworkSettings(interfaceId, dhcp, ip, netmask, gateway)
+					},
+				}
+				actions.dante_port_mapping = {
+					name: 'Dante: Set Interface Port Mapping',
+					options: [
+						{
+							id: 'config',
+							type: 'dropdown',
+							label: 'Configuration',
+							default: DantePortMapping.SINGLE_CABLE,
+							choices: Object.entries(DantePortMapping)
+								.filter(([key]) => isNaN(Number(key)))
+								.map(([key, value]) => ({
+									id: value,
+									label: key,
+								})),
+						},
+					],
+					callback: async (action) => {
+						const setting = Number(action.options.config)
+						receiver.setDantePortMapping(setting)
+					},
+				}
+			}
+		}
+	} else if (self.device instanceof CHG70N) {
+		const receiver: CHG70N = self.device
+		actions.test = {
+			name: 'Device: Test',
 			options: [
 				{
-					id: 'config',
-					type: 'dropdown',
-					label: 'Configuration',
-					default: DantePortMapping.SINGLE_CABLE,
-					choices: Object.entries(DantePortMapping)
-						.filter(([key]) => isNaN(Number(key)))
-						.map(([key, value]) => ({
-							id: value,
-							label: key,
-						})),
+					id: 'location',
+					type: 'textinput',
+					label: 'Location (max. 400 Chars)',
+					default: '',
 				},
 			],
 			callback: async (action) => {
-				const setting = Number(action.options.config)
-				self.receiver.setDantePortMapping(setting)
+				const location = String(action.options.location)
+				receiver.setLocation(location)
 			},
 		}
 	}

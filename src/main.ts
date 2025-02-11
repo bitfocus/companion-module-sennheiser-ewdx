@@ -4,12 +4,14 @@ import { UpgradeScripts } from './upgrades.js'
 import { UpdateActions } from './actions.js'
 import { UpdateFeedbacks } from './feedbacks.js'
 import { UpdateVariableDefinitions } from './variables.js'
-import { EWDXReceiver } from './receiver.js'
+import { DeviceModel, EWDX } from './receiver.js'
 import { UpdatePresets } from './presets.js'
+import { CHG70N } from './chg70n.js'
+import { EWDXReceiver } from './ewdxReceiver.js'
 
 export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	config!: ModuleConfig
-	receiver!: EWDXReceiver
+	device!: EWDX
 
 	constructor(internal: unknown) {
 		super(internal)
@@ -31,7 +33,11 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 
 	initReceiver(): void {
 		if (this.config.host != null && this.config.host != '') {
-			this.receiver = new EWDXReceiver(this, this.config.model, this.config.host)
+			if (this.config.model != DeviceModel.CHG70N) {
+				this.device = new EWDXReceiver(this, this.config.model, this.config.host)
+			} else {
+				this.device = new CHG70N(this, this.config.host)
+			}
 			this.updateStatus(InstanceStatus.Ok)
 
 			this.updateActions()

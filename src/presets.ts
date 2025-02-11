@@ -1,6 +1,6 @@
 import { combineRgb, CompanionPresetDefinitions } from '@companion-module/base'
 import { ModuleInstance } from './main.js'
-import { ReceiverModel } from './receiver.js'
+import { DeviceModel } from './receiver.js'
 
 export function UpdatePresets(self: ModuleInstance): void {
 	// Helper function to create presets
@@ -43,7 +43,7 @@ export function UpdatePresets(self: ModuleInstance): void {
 
 	const presets: CompanionPresetDefinitions = {}
 
-	const maxReceivers = self.receiver.model === ReceiverModel.EM4 ? 4 : 2
+	const maxReceivers = self.device.model === DeviceModel.EM4 ? 4 : 2
 
 	for (let i = 0; i < maxReceivers; i++) {
 		Object.assign(presets, createPreset(i))

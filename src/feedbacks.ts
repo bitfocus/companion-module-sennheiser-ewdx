@@ -1,21 +1,39 @@
 import { combineRgb, CompanionFeedbackDefinitions } from '@companion-module/base'
 import type { ModuleInstance } from './main.js'
 import { graphics } from 'companion-module-utils'
-import { OptionsBar, OptionsCorner, OptionsIcon, OptionsRect } from 'companion-module-utils/dist/graphics.js'
-import { DantePortMapping, MuteOptions, MuteOptionsTable, ReceiverModel, SyncSettings } from './receiver.js'
+import { DantePortMapping, MuteOptions, MuteOptionsTable, SyncSettings, EWDXReceiver } from './ewdxReceiver.js'
 import { images } from './graphics.js'
+import { OptionsCorner, OptionsRect, OptionsIcon, OptionsBar } from 'companion-module-utils/dist/graphics.js'
+import { DeviceModel } from './receiver.js'
+import { ChargingDevice, CHG70N } from './chg70n.js'
 
 export function UpdateFeedbacks(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
-		const maxChannels = self.receiver.model === ReceiverModel.EM4 ? 4 : 2
+		const maxChannels = self.device.model === DeviceModel.EM4 ? 4 : 2
 		return Array.from({ length: maxChannels }, (_, i) => ({
 			id: i,
 			label: `Channel ${i + 1}`,
 		}))
 	}
 
-	const feedbacks: CompanionFeedbackDefinitions = {
-		ActiveAntenna: {
+	const feedbacks: CompanionFeedbackDefinitions = {}
+
+	feedbacks.deviceIdentification = {
+		name: 'Device: Identification',
+		description: 'Becomes active if the selected device is currently being identified (LED blinks)',
+		type: 'boolean',
+		defaultStyle: {
+			bgcolor: combineRgb(0, 255, 0),
+		},
+		options: [],
+		callback: () => {
+			return self.device.identification
+		},
+	}
+
+	if (self.device instanceof EWDXReceiver) {
+		const receiver: EWDXReceiver = self.device
+		feedbacks.ActiveAntenna = {
 			name: 'Active Antenna',
 			description:
 				'Becomes active if the selected antenna for the selected channel is currently being used as the primary receive antenna',
@@ -45,10 +63,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 
-				return self.receiver.channels[channel].activeAntenna == feedback.options.antenna
+				return receiver.channels[channel].activeAntenna == feedback.options.antenna
 			},
-		},
-		device_encryption: {
+		}
+		feedbacks.device_encryption = {
 			name: 'Device: Encryption',
 			description: 'Becomes active if encryption is enabled on the receiver',
 			type: 'boolean',
@@ -57,10 +75,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			},
 			options: [],
 			callback: () => {
-				return self.receiver.encryption
+				return receiver.encryption
 			},
-		},
-		device_link_density_mode: {
+		}
+		feedbacks.device_link_density_mode = {
 			name: 'Device: Link Density Mode',
 			description: 'Becomes active if the Link Density mode is enabled on the receiver',
 			type: 'boolean',
@@ -69,10 +87,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			},
 			options: [],
 			callback: () => {
-				return self.receiver.linkDensityMode
+				return receiver.linkDensityMode
 			},
-		},
-		rx_encryption_error: {
+		}
+		feedbacks.rx_encryption_error = {
 			name: 'RX: Encryption Error',
 			description: 'Becomes active if an encryption error occurs on the selected channel',
 			type: 'boolean',
@@ -90,10 +108,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			],
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
-				return self.receiver.channels[channel].hasAes256Error
+				return receiver.channels[channel].hasAes256Error
 			},
-		},
-		rx_af_peak_warning: {
+		}
+		feedbacks.rx_af_peak_warning = {
 			name: 'RX: AF Peak Warning',
 			description: 'Becomes active if the AF peaks on the selected channel',
 			type: 'boolean',
@@ -111,10 +129,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			],
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
-				return self.receiver.channels[channel].hasAfPeakWarning
+				return receiver.channels[channel].hasAfPeakWarning
 			},
-		},
-		rx_identification: {
+		}
+		feedbacks.rx_identification = {
 			name: 'RX: Identification',
 			description: 'Becomes active if the selected receiver channels is currently being identified (LED blinks)',
 			type: 'boolean',
@@ -132,10 +150,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			],
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
-				return self.receiver.channels[channel].identification
+				return receiver.channels[channel].identification
 			},
-		},
-		rx_muted: {
+		}
+		feedbacks.rx_muted = {
 			name: 'RX: Muted',
 			type: 'boolean',
 			defaultStyle: {
@@ -152,10 +170,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			],
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
-				return self.receiver.channels[channel].muted
+				return receiver.channels[channel].muted
 			},
-		},
-		tx_mute_config_sk: {
+		}
+		feedbacks.tx_mute_config_sk = {
 			name: 'RX: Mute Config [SK(M)]',
 			type: 'boolean',
 			defaultStyle: {
@@ -186,15 +204,15 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const setting = Number(feedback.options.setting)
 				switch (setting as MuteOptions) {
 					case MuteOptions.off:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptions.off
+						return receiver.channels[channel].mate.muteConfig == MuteOptions.off
 					case MuteOptions.af_mute:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptions.af_mute
+						return receiver.channels[channel].mate.muteConfig == MuteOptions.af_mute
 					case MuteOptions.rf_mute:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptions.rf_mute
+						return receiver.channels[channel].mate.muteConfig == MuteOptions.rf_mute
 				}
 			},
-		},
-		tx_mute_config_table: {
+		}
+		feedbacks.tx_mute_config_table = {
 			name: 'RX: Mute Config [Table Stand]',
 			type: 'boolean',
 			defaultStyle: {
@@ -226,17 +244,17 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const setting = Number(feedback.options.setting)
 				switch (setting as MuteOptionsTable) {
 					case MuteOptionsTable.off:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptionsTable.off
+						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.off
 					case MuteOptionsTable.af_mute:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptionsTable.af_mute
+						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.af_mute
 					case MuteOptionsTable.push_to_talk:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_talk
+						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_talk
 					case MuteOptionsTable.push_to_mute:
-						return self.receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_mute
+						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_mute
 				}
 			},
-		},
-		rx_sync_ignore: {
+		}
+		feedbacks.rx_sync_ignore = {
 			name: 'RX: Sync Ignore',
 			description: 'Get feedback over currently ignored sync parameters of a receiver channel',
 			type: 'boolean',
@@ -273,27 +291,27 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const setting = Number(feedback.options.setting)
 				switch (setting as SyncSettings) {
 					case SyncSettings.trim_ignore:
-						return self.receiver.channels[channel].syncIgnoreTrim
+						return receiver.channels[channel].syncIgnoreTrim
 					case SyncSettings.name_ignore:
-						return self.receiver.channels[channel].syncIgnoreName
+						return receiver.channels[channel].syncIgnoreName
 					case SyncSettings.mute_config_ignore:
-						return self.receiver.channels[channel].syncIgnoreMuteConfig
+						return receiver.channels[channel].syncIgnoreMuteConfig
 					case SyncSettings.lowcut_ignore:
-						return self.receiver.channels[channel].syncIgnoreLowcut
+						return receiver.channels[channel].syncIgnoreLowcut
 					case SyncSettings.lock_ignore:
-						return self.receiver.channels[channel].syncIgnoreLock
+						return receiver.channels[channel].syncIgnoreLock
 					case SyncSettings.led_ignore:
-						return self.receiver.channels[channel].syncIgnoreLED
+						return receiver.channels[channel].syncIgnoreLED
 					case SyncSettings.frequency_ignore:
-						return self.receiver.channels[channel].syncIgnoreFrequency
+						return receiver.channels[channel].syncIgnoreFrequency
 					case SyncSettings.cable_emulation_ignore:
-						return self.receiver.channels[channel].syncIgnoreCableEmulation
+						return receiver.channels[channel].syncIgnoreCableEmulation
 					default:
 						return false
 				}
 			},
-		},
-		receiverState: {
+		}
+		feedbacks.receiverState = {
 			name: 'RX: Status Display',
 			description: 'Displays detailed information about the selected receiver channel',
 			type: 'advanced',
@@ -381,15 +399,15 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 					const elements: Uint8Array[] = []
 
-					if (self.receiver.channels[channel].activeAntenna == 1) {
+					if (receiver.channels[channel].activeAntenna == 1) {
 						elements.push(graphics.corner(cornerOptionsLeft))
-					} else if (self.receiver.channels[channel].activeAntenna == 2) {
+					} else if (receiver.channels[channel].activeAntenna == 2) {
 						elements.push(graphics.corner(cornerOptionsRight))
 					}
 
-					if (self.receiver.channels[channel].mate.batteryGauge > 50) {
+					if (receiver.channels[channel].mate.batteryGauge > 50) {
 						elements.push(graphics.rect(batterySymbolGreen))
-					} else if (self.receiver.channels[channel].mate.batteryGauge >= 20) {
+					} else if (receiver.channels[channel].mate.batteryGauge >= 20) {
 						elements.push(graphics.rect(batterySymbolYellow))
 					} else {
 						elements.push(graphics.rect(batterySymbolRed))
@@ -457,7 +475,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						opacity: 255,
 					}
 
-					if (self.receiver.channels[channel].hasAfPeakWarning == true) {
+					if (receiver.channels[channel].hasAfPeakWarning == true) {
 						elements.push(
 							graphics.icon({
 								...afPeakProps,
@@ -466,11 +484,11 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						)
 					}
 
-					if (self.receiver.channels[channel].identification) {
+					if (receiver.channels[channel].identification) {
 						elements.push(graphics.bar(identBarProps))
 					}
 
-					if (self.receiver.channels[channel].warnings) {
+					if (receiver.channels[channel].warnings) {
 						elements.push(
 							graphics.icon({
 								...warningProps,
@@ -479,7 +497,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						)
 					}
 
-					if (self.receiver.channels[channel].hasAes256Error) {
+					if (receiver.channels[channel].hasAes256Error) {
 						elements.push(
 							graphics.icon({
 								...shieldProps,
@@ -487,7 +505,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							}),
 						)
 					} else {
-						if (self.receiver.encryption) {
+						if (receiver.encryption) {
 							elements.push(
 								graphics.icon({
 									...shieldProps,
@@ -504,21 +522,21 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						}
 					}
 
-					if (self.receiver.channels[channel].rsqi > 70) {
+					if (receiver.channels[channel].rsqi > 70) {
 						elements.push(
 							graphics.icon({
 								...antennaProps,
 								custom: images.antenna.green,
 							}),
 						)
-					} else if (self.receiver.channels[channel].rsqi > 40) {
+					} else if (receiver.channels[channel].rsqi > 40) {
 						elements.push(
 							graphics.icon({
 								...antennaProps,
 								custom: images.antenna.yellow,
 							}),
 						)
-					} else if (self.receiver.channels[channel].rsqi >= 1) {
+					} else if (receiver.channels[channel].rsqi >= 1) {
 						elements.push(
 							graphics.icon({
 								...antennaProps,
@@ -533,7 +551,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							}),
 						)
 					}
-					if (self.receiver.channels[channel].mate.muted) {
+					if (receiver.channels[channel].mate.muted) {
 						elements.push(
 							graphics.icon({
 								...muteProps,
@@ -545,15 +563,15 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					return {
 						imageBuffer: graphics.stackImage(elements),
 						text:
-							self.receiver.channels[channel].mate.batteryGauge +
+							receiver.channels[channel].mate.batteryGauge +
 							'%\\n\\n' +
-							self.receiver.channels[channel].name +
+							receiver.channels[channel].name +
 							'\\n' +
-							self.receiver.channels[channel].frequency.toString().slice(0, 3) +
+							receiver.channels[channel].frequency.toString().slice(0, 3) +
 							'.' +
-							self.receiver.channels[channel].frequency.toString().slice(3) +
+							receiver.channels[channel].frequency.toString().slice(3) +
 							'\\n\\n' +
-							self.receiver.channels[channel].rsqi +
+							receiver.channels[channel].rsqi +
 							'%',
 					}
 				} else
@@ -561,38 +579,223 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						imageBuffer: new Uint8Array(),
 					}
 			},
-		},
-	}
-	/* Dante model specific feedbacks  */
+		}
+		/* Dante model specific feedbacks  */
+		if (self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) {
+			// const receiver: EWDXReceiver = self.receiver
 
-	if (self.receiver.model === ReceiverModel.EM4 || self.receiver.model === ReceiverModel.EM2_DANTE) {
-		feedbacks.dante_port_mapping = {
-			name: 'Dante: Port Mapping',
-			description: 'Becomes active if the selected port mapping is currently being used on the Dante interface',
+			if (self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) {
+				feedbacks.dante_port_mapping = {
+					name: 'Dante: Port Mapping',
+					description: 'Becomes active if the selected port mapping is currently being used on the device',
+					type: 'boolean',
+					defaultStyle: {
+						bgcolor: combineRgb(0, 255, 0),
+					},
+					options: [
+						{
+							id: 'mapping',
+							type: 'dropdown',
+							label: 'Mapping',
+							default: DantePortMapping.SINGLE_CABLE,
+							choices: [
+								{ id: DantePortMapping.SINGLE_CABLE, label: 'Single Cable' },
+								{ id: DantePortMapping.SPLIT1, label: 'Split 1' },
+								{ id: DantePortMapping.SPLIT2, label: 'Split 2' },
+								{ id: DantePortMapping.SPLIT, label: 'Split' },
+								{ id: DantePortMapping.AUDIO_REDUNDANCY, label: 'Audio Redundancy' },
+							],
+						},
+					],
+					callback: (feedback) => {
+						const mapping = feedback.options.mapping as DantePortMapping
+
+						return receiver.danteInterfaceMapping === mapping
+					},
+				}
+			}
+		}
+		/* CHG70N Feedbacks */
+	} else if (self.device instanceof CHG70N) {
+		const device: CHG70N = self.device
+		feedbacks.baystate = {
+			name: 'Charging Bay: Status Display',
+			description: 'Shows important information about the selected charging bay',
+			type: 'advanced',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+			],
+			callback: async (feedback) => {
+				const bay = Number(feedback.options.bay)
+				if (feedback.image) {
+					const elements: Uint8Array[] = []
+
+					const commonIconProps: OptionsIcon = {
+						width: feedback.image.width,
+						height: feedback.image.height,
+						type: 'custom',
+					}
+
+					const batterySymbolRed: OptionsRect = {
+						width: feedback.image.width,
+						height: feedback.image.height,
+						color: combineRgb(255, 255, 255),
+						rectWidth: 30,
+						rectHeight: 13,
+						strokeWidth: 1,
+						opacity: 255,
+						fillColor: combineRgb(255, 0, 0),
+						fillOpacity: 128,
+						offsetX: 20,
+						offsetY: 4,
+					}
+					const batterySymbolYellow: OptionsRect = {
+						width: feedback.image.width,
+						height: feedback.image.height,
+						color: combineRgb(255, 255, 255),
+						rectWidth: 30,
+						rectHeight: 13,
+						strokeWidth: 1,
+						opacity: 255,
+						fillColor: combineRgb(255, 255, 0),
+						fillOpacity: 128,
+						offsetX: 20,
+						offsetY: 4,
+					}
+					const batterySymbolGreen: OptionsRect = {
+						width: feedback.image.width,
+						height: feedback.image.height,
+						color: combineRgb(255, 255, 255),
+						rectWidth: 30,
+						rectHeight: 13,
+						strokeWidth: 1,
+						opacity: 255,
+						fillColor: combineRgb(0, 255, 0),
+						fillOpacity: 128,
+						offsetX: 20,
+						offsetY: 4,
+					}
+					const batteryOptions2: OptionsRect = {
+						width: feedback.image.width,
+						height: feedback.image.height,
+						color: combineRgb(255, 255, 255),
+						rectWidth: 3,
+						rectHeight: 4,
+						strokeWidth: 1,
+						opacity: 255,
+						fillColor: combineRgb(255, 255, 255),
+						fillOpacity: 255,
+						offsetX: 50,
+						offsetY: 8,
+					}
+
+					const warningProps: OptionsIcon = {
+						...commonIconProps,
+						offsetX: feedback.image.width - 2 - 16,
+						offsetY: 2,
+						customWidth: 16,
+						customHeight: 16,
+					}
+
+					const identBarProps: OptionsBar = {
+						width: feedback.image.width,
+						height: feedback.image.height,
+						colors: [
+							{ size: 100, color: combineRgb(0, 255, 0), background: combineRgb(0, 255, 0), backgroundOpacity: 255 },
+						],
+						barLength: feedback.image.width,
+						barWidth: 2,
+						value: 100,
+						type: 'horizontal',
+						offsetX: 0,
+						offsetY: feedback.image.height - 2,
+						opacity: 255,
+					}
+
+					if (device.chargingBays[bay].warnings.length > 0) {
+						elements.push(
+							graphics.icon({
+								...warningProps,
+								custom: images.warning,
+							}),
+						)
+					}
+
+					if (device.chargingBays[bay].identification) {
+						elements.push(graphics.bar(identBarProps))
+					}
+
+					if (device.chargingBays[bay].batGauge > 60) {
+						elements.push(graphics.rect(batterySymbolGreen))
+					} else if (device.chargingBays[bay].batGauge > 20) {
+						elements.push(graphics.rect(batterySymbolYellow))
+					} else {
+						elements.push(graphics.rect(batterySymbolRed))
+					}
+					elements.push(graphics.rect(batteryOptions2))
+
+					return {
+						imageBuffer: graphics.stackImage(elements),
+						text:
+							device.chargingBays[bay].batGauge +
+							'%\\n\\nFull: ' +
+							device.chargingBays[bay].timeToFull +
+							' min\\n\\n\\n' +
+							ChargingDevice[device.chargingBays[bay].chargingDevice],
+					}
+				} else {
+					return {
+						imageBuffer: new Uint8Array(),
+					}
+				}
+			},
+		}
+		feedbacks.deviceIdentification = {
+			name: 'Device: Identification',
+			description: 'Becomes active, if the device is currently being identified',
+			type: 'boolean',
+			defaultStyle: {
+				bgcolor: combineRgb(0, 255, 0),
+			},
+			options: [],
+			callback: () => {
+				return device.identification
+			},
+		}
+		feedbacks.bayIdentification = {
+			name: 'Charging Bay: Identification',
+			description: 'Becomes active, if a specific charging bay is currently being identified',
 			type: 'boolean',
 			defaultStyle: {
 				bgcolor: combineRgb(0, 255, 0),
 			},
 			options: [
 				{
-					id: 'mapping',
+					id: 'bay',
 					type: 'dropdown',
-					label: 'Mapping',
+					label: 'Charging Bay',
 					default: 0,
 					choices: [
-						{ id: DantePortMapping.SINGLE_CABLE, label: 'Single Cable' },
-						{ id: DantePortMapping.SPLIT1, label: 'Split 1' },
-						{ id: DantePortMapping.SPLIT2, label: 'Split 2' },
-						{ id: DantePortMapping.SPLIT, label: 'Split' },
-						{ id: DantePortMapping.AUDIO_REDUNDANCY, label: 'Audio Redundancy' },
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
 					],
 				},
 			],
-			callback: () => {
-				return false
-				//ToDo: Implement callback
+			callback: (feedback) => {
+				const bay = Number(feedback.options.bay)
+				return device.chargingBays[bay].identification
 			},
 		}
 	}
+
 	self.setFeedbackDefinitions(feedbacks)
 }

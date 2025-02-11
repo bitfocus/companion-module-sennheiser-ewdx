@@ -1,9 +1,9 @@
 import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
-import { ReceiverModel } from './receiver.js'
+import { DeviceModel } from './receiver.js'
 
 export interface ModuleConfig {
 	host: string
-	model: ReceiverModel
+	model: DeviceModel
 }
 
 export function GetConfigFields(): SomeCompanionConfigField[] {
@@ -20,11 +20,12 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			width: 12,
 			id: 'model',
 			label: 'Select Receiver Model',
-			default: ReceiverModel.EM4,
+			default: DeviceModel.EM4,
 			choices: [
-				{ id: ReceiverModel.EM2, label: 'EM2' },
-				{ id: ReceiverModel.EM2_DANTE, label: 'EM2 Dante' },
-				{ id: ReceiverModel.EM4, label: 'EM4' },
+				{ id: DeviceModel.EM2, label: 'EM2' },
+				{ id: DeviceModel.EM2_DANTE, label: 'EM2 Dante' },
+				{ id: DeviceModel.EM4, label: 'EM4' },
+				{ id: DeviceModel.CHG70N, label: 'CHG70N' },
 			],
 		},
 	]
