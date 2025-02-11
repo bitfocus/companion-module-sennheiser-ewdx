@@ -860,6 +860,11 @@ class RxChannel {
 		this.parentDevice.sendCommand(command, CableEmulationOptions[mode])
 	}
 
+	setTrim(trim: number): void {
+		const command = '/rx' + this.index + '/sync_settings/trim'
+		this.parentDevice.sendCommand(command, trim)
+	}
+
 	setName(name: string): void {
 		if (name.length > 8) {
 			name = name.substring(0, 8)

@@ -20,6 +20,14 @@ const icons = {
 		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAACXBIWXMAAA7EAAAOxAGVKw4bAAAB0klEQVQ4jZ2TsU8TcRTHP3f3u5YqdwGxPTsIDI0NNSYFR6XBDg2miY2zDGwMMHUiDoZo4kLCQtSh+E9ICImJhBATBiKJS80lDmyUNjaRNuh53J3LtbT4c9Dv+N73+977/b7vwZ/IAm8A2zSEYxrCAewwlpXwu7gCVDJpw9tYnwyO7dnAa5YCr1kKju3ZYGN9MsikDQ+ohFwAlB7xdnkxlXv5bAJdV6UdXNfn6fMvrL36ugc8BM60MPe6vJh6vPriNpqmdAWHn79TqzskrQEANE2hkE/Qbntj+wdNC9hUgGwmbXw63JtRezt7XkDM2kRR4efJI5SLuriuz1Ru16/arbsqsFBeSqmXx9Y0BaErGIOiTwyg6yrlpZQKLAggXyxY0jePXIsweFVIc6EmL0xDjCfiUSnJikeJxTRpLhGPYhpiXF4+RPLGALqQO9KBOG2dH9Ubzi3ZFHcmzAujL6HecDhtnR+pwM7W+xMpaX5ulPkno9JcqNn5q40AM8WPAOxu3e+L99qoAbXGt183z374U4V8oo+YuzdCqZhkeCjSF19eqfJuu/YWqHS++MP+QXO63fbGHkxf727j8FCkT+y6Pssr1c4qzwFub+H/OiYZ/umcfwOL1qt5oMVl0wAAAABJRU5ErkJggg==',
 	afpeak:
 		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAMlQTFRFAAAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAANjB0OwAAAEN0Uk5TACqLiZMwZHYIAo0iWmoKPo9UUkwm27eBGjqzehZEeHDLbBB8FEKZkQxuJCxyrYUYaFCHDrm7qU6bZhx+PASdSpV0VmHhA3QAAADJSURBVHicRY/LD8FwDMf7tRFbLJtX4nFA4nFw5CJxEP+4kzi5Yll2cZGIMNnLMHS/DE0P7aftty0oNYAdD0Ka54AbKYCfggJ5OZkk+LEA+tVwijhTOQpeDCrPLKKrGnBFjURHXgcOjeDpkURxqiHFTd6xz1Ay0uIQthKS2nBP3NHjSsvuYjPEVn9fhEZHdgwgVIFgl4ARYPV5bD3GUlw69TTcz/XjduauBWA9WXlMFlrNou8vA5NoHq7oBwxHadt3+oNStW4eRPQBfvM/ETyxpjEAAAAASUVORK5CYII=',
+	temperature:
+		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAFRQTFRFAAAA////KycnKycn7xwlLScnKycn7xwlYCQmYSQmKycnKycnWSQm7xwloSAmVyQm7xwl7xwl7xwlhSIm7hwl7xwlmCEm7xwlyh4lxR4l7xwl2B0lm/Fi0QAAABx0Uk5TAP8KdDxMXPlIShgSNPs4TN//60RWbkT9SEaHTF7g+yAAAABXSURBVHicY2QAA0Yg+gdjgUgmRsY//5EFWBkZf6IJMP2gjwAn41eYACMDNyPjZ4b/cBWMfIxA8A5JQPgvAwPLGyQB0Y9cbIwvkQQYJBgZnyGZASEh1gIAH4UgEdzAgW4AAAAASUVORK5CYII=',
+	overcurrent:
+		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAALpQTFRFAAAA/////////////////////wEB/////////////////////////wQE/////////////w0N/wMD/////////wAA/wIC/////////////////////xAQ/////////xAQ/////////////wUF/////////////////xER/wEB/////////////w8P/////////////wMD/////////////wgI/////////////yEh/////////////////AeFAAAAAD50Uk5TAAhE2f8O/2z99482BP9O3Sj//+Xx//8kXnqnGv3N6f/T4yr/0bf7DP/+eFjX/4GtBv5QsYf8As+N/iYK1ZFFZYidAAAA5UlEQVR4nC2P30vCcBTFz9GVJlo61FlqVGILf9R6UIj+/6dMSma1wCJhSlOG5l4c1rc78cC99/C5XLiH2IlqN6ViJDZ7DBH724IEIwWZFZJqLeAwTHAB5OjjaL3/Q+qcy1mBHmD8Kp+leWEqoAgBOJ7leeIZLlBZHkSg/F1klWNxOQ1IfQGnimf8xMVCy3jJmSzO46yTjrgrz3gFTKXYeDeHAvQglN50Lln2a7bY9uZNfm+NdOL6pcmnW7fSh6WGjQGRNp+tXk1/6PY6jzdOIFnSrbB/Rzs70Sw72KaNdL/M0v0Q8w98lknv+pUeDAAAAABJRU5ErkJggg==',
+	communicationError:
+		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABJQTFRF////AAAA/wAA/QAA/QAA/QAAISx/dgAAAAZ0Uk5T/wD/BAoCR4+L1gAAADtJREFUeJxjZIACRkYBMP0fG0MQxPr/npFRyBDIeHsfTer/B6y6MBgMDIHrwXYJ/mdghDI+CkAZYAEGAIKXFPTmTzGmAAAAAElFTkSuQmCC',
+	chargeError:
+		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAIFQTFRFAAAA/QAA/QAA/////////////QAA/QAA/QAA/QAA/////////////QAA/QAA/QAA/////////QAA/QAA/QAA/QAA/////////////QAA/QAA/////QAA/QAA/QAA/QAA/QAA/QAA/QAA/QAA/////QAA/QAA/QAA/////QAA/QAASZRZQQAAACt0Uk5TAApwg8nHNIeLZL0kzyr5Wlp2wf86BlDt12Bm/+vPBAj9NsuVwRTjEqssTOBzjJEAAAB3SURBVHicY2RAA4xECzAy/oMymBkZwXxGxj8MDKyMXxl5voDEeRkZPwIpAcb3jKy/QQJCQBWvGRjEgBRYQPIXAwP7M6AAKwNYQJT9OwMX4yOEAIP8SwnG+wwQLRBDlRjvMkANBVkrD7IVJAKyFuwaTcZrpPsFDgBe9xd3p/zORwAAAABJRU5ErkJggg==',
 }
 
 export const images = {
@@ -37,4 +45,8 @@ export const images = {
 	mute: await graphics.parseBase64(icons.mute, { alpha: true }),
 	warning: await graphics.parseBase64(icons.warning, { alpha: true }),
 	afpeak: await graphics.parseBase64(icons.afpeak, { alpha: true }),
+	temperature: await graphics.parseBase64(icons.temperature, { alpha: true }),
+	overcurrent: await graphics.parseBase64(icons.overcurrent, { alpha: true }),
+	communicationError: await graphics.parseBase64(icons.communicationError, { alpha: true }),
+	chargeError: await graphics.parseBase64(icons.chargeError, { alpha: true }),
 }

@@ -131,6 +131,21 @@ export function UpdateActions(self: ModuleInstance): void {
 				receiver.setBrightness(brightness)
 			},
 		}
+		actions.identification = {
+			name: 'Device: Enable/Disable Identification',
+			options: [
+				{
+					id: 'ident',
+					type: 'checkbox',
+					label: 'Visual Identification',
+					default: true,
+				},
+			],
+			callback: async (action) => {
+				const ident = Boolean(action.options.ident)
+				receiver.setIdentification(ident)
+			},
+		}
 		actions.autolock = {
 			name: 'Device: Set Auto Lock',
 			options: [
@@ -362,6 +377,31 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const lock = Boolean(action.options.lock)
 				receiver.channels[channel].setAutoLock(lock)
+			},
+		}
+		actions.rx_ss_trim = {
+			name: 'RX: Sync Settings: Set Trim',
+			options: [
+				{
+					id: 'receiver',
+					type: 'dropdown',
+					label: 'Receiver Channel',
+					default: 0,
+					choices: getChannelOptions(),
+				},
+				{
+					id: 'trim',
+					type: 'number',
+					label: 'Trim',
+					default: 0,
+					min: -12,
+					max: 6,
+				},
+			],
+			callback: async (action) => {
+				const channel = Number(action.options.receiver)
+				const trim = Number(action.options.trim)
+				receiver.channels[channel].setTrim(trim)
 			},
 		}
 		actions.rx_ss_tx_led = {
@@ -644,20 +684,306 @@ export function UpdateActions(self: ModuleInstance): void {
 			}
 		}
 	} else if (self.device instanceof CHG70N) {
-		const receiver: CHG70N = self.device
-		actions.test = {
-			name: 'Device: Test',
+		const device: CHG70N = self.device
+
+		actions.device_identification = {
+			name: 'Device: Enable/Disable Identification',
 			options: [
 				{
-					id: 'location',
+					id: 'setting',
+					type: 'checkbox',
+					label: 'Enable Identification',
+					default: true,
+				},
+			],
+			callback: async (action) => {
+				const setting = Boolean(action.options.setting)
+				device.setIdentification(setting)
+			},
+		}
+
+		actions.bay_identification = {
+			name: 'Bay: Set Identification',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'checkbox',
+					label: 'Enable Identification',
+					default: true,
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Boolean(action.options.setting)
+				device.chargingBays[bay].setIdentify(setting)
+			},
+		}
+
+		actions.ss_mute_config = {
+			name: 'Sync Settings: Mute Config',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'dropdown',
+					label: 'Mute Setting',
+					default: MuteOptions.off,
+					choices: [
+						{ id: MuteOptions.off, label: 'Off' },
+						{ id: MuteOptions.rf_mute, label: 'RF Mute' },
+						{ id: MuteOptions.af_mute, label: 'AF Mute' },
+					],
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const muteSetting = Number(action.options.setting)
+				device.chargingBays[bay].setMuteConfig(muteSetting)
+			},
+		}
+		actions.ss_frequency = {
+			name: 'Sync Settings: Frequency',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'number',
+					label: 'Frequency',
+					default: 470200,
+					min: 470200,
+					max: 1999000,
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Number(action.options.setting)
+				device.chargingBays[bay].setFrequency(setting)
+			},
+		}
+		actions.ss_trim = {
+			name: 'Sync Settings: Trim',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'number',
+					label: 'Trim',
+					default: 0,
+					min: -12,
+					max: 6,
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Number(action.options.setting)
+				device.chargingBays[bay].setTrim(setting)
+			},
+		}
+
+		actions.ss_name = {
+			name: 'Sync Settings: Name',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
 					type: 'textinput',
-					label: 'Location (max. 400 Chars)',
+					label: 'Name',
 					default: '',
 				},
 			],
 			callback: async (action) => {
-				const location = String(action.options.location)
-				receiver.setLocation(location)
+				const bay = Number(action.options.bay)
+				const setting = String(action.options.setting)
+				device.chargingBays[bay].setName(setting)
+			},
+		}
+
+		actions.ss_lowcut = {
+			name: 'Sync Settings: Set Lowcut',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'dropdown',
+					label: 'Lowcut',
+					default: LowcutOptions.off,
+					choices: Object.entries(LowcutOptions)
+						.filter(([key]) => isNaN(Number(key)))
+						.map(([key, value]) => ({
+							id: value,
+							label: key,
+						})),
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Number(action.options.setting)
+				device.chargingBays[bay].setLowcut(setting as LowcutOptions)
+			},
+		}
+		actions.ss_lock = {
+			name: 'Sync Settings: Auto Lock',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'checkbox',
+					label: 'Enable Auto Lock',
+					default: true,
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Boolean(action.options.setting)
+				device.chargingBays[bay].setAutoLock(setting)
+			},
+		}
+		actions.ss_link_density_mode = {
+			name: 'Sync Settings: Link Density Mode',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'checkbox',
+					label: 'Enable Link Density Mode',
+					default: false,
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Boolean(action.options.setting)
+				device.chargingBays[bay].setLinkDensityMode(setting)
+			},
+		}
+		actions.ss_tx_led = {
+			name: 'Sync Settings: TX LED',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'checkbox',
+					label: 'Enable TX LED',
+					default: true,
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Boolean(action.options.setting)
+				device.chargingBays[bay].setTxLED(setting)
+			},
+		}
+		actions.ss_cable_emulation = {
+			name: 'Sync Settings: Cable Emulation',
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'setting',
+					type: 'dropdown',
+					label: 'Cable Emulation',
+					default: CableEmulationOptions.off,
+					choices: [
+						{ id: CableEmulationOptions.off, label: 'Off' },
+						{ id: CableEmulationOptions.type1, label: 'Type 1' },
+						{ id: CableEmulationOptions.type2, label: 'Type 2' },
+						{ id: CableEmulationOptions.type3, label: 'Type 3' },
+					],
+				},
+			],
+			callback: async (action) => {
+				const bay = Number(action.options.bay)
+				const setting = Number(action.options.setting)
+				device.chargingBays[bay].setCableEmulation(setting)
 			},
 		}
 	}

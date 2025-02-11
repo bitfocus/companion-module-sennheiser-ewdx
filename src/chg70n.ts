@@ -1,3 +1,4 @@
+import { CableEmulationOptions, LowcutOptions, MuteOptions } from './ewdxReceiver.js'
 import { ModuleInstance } from './main.js'
 import { DeviceModel, EWDX, UNKNOWN } from './receiver.js'
 
@@ -73,12 +74,155 @@ class ChargingBay {
 			[`bay${this.index}_batCycles`]: this.batCycles,
 			[`bay${this.index}_batGauge`]: this.batGauge,
 			[`bay${this.index}_batHealth`]: this.batHealth,
+			[`bay${this.index}_chargingDevice`]: ChargingDevice[this.chargingDevice],
+			[`bay${this.index}_txSerial`]: this.txSerial,
+			[`bay${this.index}_txVersion`]: this.txVersion,
+			[`bay${this.index}_identification`]: this.identification,
+			[`bay${this.index}_state`]: ChargingBayState[this.state],
+			[`bay${this.index}_warnings`]: this.warnings.map((w) => ChargingBayWarnings[w]).join(', '),
+			[`bay${this.index}_syncError`]: this.syncError,
 		})
+	}
+
+	setIdentify(identify: boolean): void {
+		const identifyArray: (boolean | null)[] = Array(2).fill(null)
+		identifyArray[this.index - 1] = identify
+
+		const msg = {
+			bays: {
+				identify: identifyArray,
+			},
+		}
+
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+
+	setName(name: string): void {
+		if (name.length > 8) {
+			name = name.substring(0, 8)
+		}
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						name: name,
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+
+	setMuteConfig(mute: MuteOptions): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						mute_config: MuteOptions[mute],
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setCableEmulation(emulation: CableEmulationOptions): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						cable_emulation: CableEmulationOptions[emulation],
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setTxLED(led: boolean): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						led: led,
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setAutoLock(lock: boolean): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						lock: lock,
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setLowcut(lowcut: LowcutOptions): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						lowcut: LowcutOptions[lowcut],
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setLinkDensityMode(density: boolean): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						link_density_mode: density,
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setFrequency(freq: number): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						frequency: freq,
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
+	}
+	setTrim(trim: number): void {
+		const msg = {
+			bays: {
+				sync_settings: [
+					{
+						bay_id: this.index - 1,
+						trim: trim,
+					},
+				],
+			},
+		}
+		this.parentDevice.sendMessage(JSON.stringify(msg))
 	}
 }
 
 export class CHG70N extends EWDX {
 	productLabel: string
+	version: string
 	warnings: boolean
 	storageMode: boolean
 	chargingBays: ChargingBay[]
@@ -87,6 +231,7 @@ export class CHG70N extends EWDX {
 	constructor(context: ModuleInstance, host: string) {
 		super(context, DeviceModel.CHG70N, host)
 		this.productLabel = UNKNOWN
+		this.version = UNKNOWN
 		this.warnings = false
 		this.storageMode = false
 		this.chargingBays = []
@@ -102,10 +247,14 @@ export class CHG70N extends EWDX {
 	}
 
 	publishVariableValues(): void {
+		console.log('Publishing device vars!!!')
 		this.context.setVariableValues({
-			receiver_location: this.location,
-			receiver_name: this.name,
-			receiver_identification: this.identification,
+			device_location: this.location,
+			device_name: this.name,
+			device_identification: this.identification,
+			device_storagemode: this.storageMode,
+			device_productlabel: this.productLabel,
+			device_version: this.version,
 			device_netmask_dhcp: this.networkInterface.netmask,
 			device_manual_netmask: this.networkInterface.manualNetmask,
 			device_ip_dhcp: this.networkInterface.ip,
@@ -211,7 +360,10 @@ export class CHG70N extends EWDX {
 			}
 			if (json.device.identity != undefined) {
 				if (json.device.identity.product != undefined) {
-					console.log('ID: ' + json.device.identity.product)
+					this.productLabel = json.device.identity.product
+				}
+				if (json.device.identity.version != undefined) {
+					this.version = json.device.identity.version
 				}
 			}
 			if (json.device.storage_mode != undefined) {
@@ -225,7 +377,34 @@ export class CHG70N extends EWDX {
 					this.warnings = false
 				} else this.warnings = true
 			}
-
+			if (json.device.network != undefined) {
+				if (json.device.network.ipv4 != undefined) {
+					if (json.device.network.ipv4.manual_netmask != undefined) {
+						this.networkInterface.manualNetmask = json.device.network.ipv4.manual_netmask
+					}
+					if (json.device.network.ipv4.manual_ipaddr != undefined) {
+						this.networkInterface.manualIP = json.device.network.ipv4.manual_ipaddr
+					}
+					if (json.device.network.ipv4.manual_gateway != undefined) {
+						this.networkInterface.manualGateway = json.device.network.ipv4.manual_gateway
+					}
+					if (json.device.network.ipv4.netmask != undefined) {
+						this.networkInterface.netmask = json.device.network.ipv4.netmask
+					}
+					if (json.device.network.ipv4.ipaddr != undefined) {
+						this.networkInterface.ip = json.device.network.ipv4.ipaddr
+					}
+					if (json.device.network.ipv4.gateway != undefined) {
+						this.networkInterface.gateway = json.device.network.ipv4.gateway
+					}
+					if (json.device.network.ipv4.auto != undefined) {
+						this.networkInterface.dhcp = json.device.network.ipv4.auto
+					}
+				}
+				if (json.device.network.mdns != undefined) {
+					this.mdns = json.device.network.mdns
+				}
+			}
 			this.publishVariableValues()
 		}
 		if (json.bays) {
@@ -293,9 +472,9 @@ export class CHG70N extends EWDX {
 				this.chargingBays[0].batGauge = json.bays.bat_gauge[0]
 				this.chargingBays[1].batGauge = json.bays.bat_gauge[1]
 			}
-			if (json.bays.bat_cylces != undefined) {
-				this.chargingBays[0].batCycles = json.bays.bat_cylces[0]
-				this.chargingBays[1].batCycles = json.bays.bat_cylces[1]
+			if (json.bays.bat_cycles != undefined) {
+				this.chargingBays[0].batCycles = json.bays.bat_cycles[0]
+				this.chargingBays[1].batCycles = json.bays.bat_cycles[1]
 			}
 		}
 

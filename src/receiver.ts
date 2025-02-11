@@ -120,6 +120,10 @@ export abstract class EWDX {
 		this.sendCommand('/device/location', location)
 	}
 
+	setIdentification(identification: boolean): void {
+		this.sendCommand('/device/identification/visual', identification)
+	}
+
 	setNetworkSettings(dhcp: boolean, mdns: boolean, ip: string, netmask: string, gateway: string): void {
 		this.sendCommand('/device/network/ipv4/auto', dhcp)
 		this.sendCommand('/device/network/mdns', mdns)

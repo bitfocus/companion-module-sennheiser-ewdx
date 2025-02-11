@@ -96,15 +96,12 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 			{ variableId: `tx${i + 1}_cableEmulation`, name: `Cable Emulation of TX Channel ${i + 1}` },
 		])
 
-		const flattenedRxVariables = rxChannelVariables.flat()
-		const flattenedTxVariables = txChannelVariables.flat()
-
 		const allVariables: { variableId: string; name: string }[] = [
 			...deviceVariables,
 			...networkVariables,
 			...(self.device.model === DeviceModel.EM2_DANTE || self.device.model === DeviceModel.EM4 ? danteVariables : []),
-			...flattenedRxVariables,
-			...flattenedTxVariables,
+			...rxChannelVariables.flat(),
+			...txChannelVariables.flat(),
 		]
 
 		self.setVariableDefinitions(allVariables)
@@ -117,7 +114,39 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 			{ variableId: `bay${i + 1}_batCycles`, name: `Number of charging cycles for battery in bay ${i + 1}` },
 			{ variableId: `bay${i + 1}_batGauge`, name: `Charge (percent) for battery in bay ${i + 1}` },
 			{ variableId: `bay${i + 1}_batHealth`, name: `Health (percent) for battery in bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_chargingDevice`, name: `Battery type in bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_txSerial`, name: `Serial number of device in bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_txVersion`, name: `Firmware version of device in bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_identification`, name: `Identification active for bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_state`, name: `State for bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_warnings`, name: `Warnings for bay ${i + 1}` },
+			{ variableId: `bay${i + 1}_syncError`, name: `Sync error for bay ${i + 1}` },
 		])
-		self.setVariableDefinitions(bayVariables.flat())
+		const deviceVariables = [
+			{ variableId: 'device_location', name: 'Location' },
+			{ variableId: 'device_name', name: 'Name' },
+			{ variableId: 'device_identification', name: 'Visual Identification' },
+			{ variableId: 'device_storagemode', name: 'Storage mode' },
+			{ variableId: 'device_productlabel', name: 'Product label' },
+			{ variableId: 'device_version', name: 'Device version' },
+		]
+		const networkVariables = [
+			{ variableId: 'device_netmask_dhcp', name: 'Device Netmask (DHCP)' },
+			{ variableId: 'device_manual_netmask', name: 'Device Manual Netmask' },
+			{ variableId: 'device_ip_dhcp', name: 'Device IP Address (DHCP)' },
+			{ variableId: 'device_ip_manual', name: 'Device IP Address Manual' },
+			{ variableId: 'device_gateway_dhcp', name: 'Device Gateway (DHCP)' },
+			{ variableId: 'device_gateway_manual', name: 'Device Gateway Manual' },
+			{ variableId: 'device_dhcp', name: 'Device DHCP' },
+			{ variableId: 'device_mdns', name: 'Device MDNS' },
+		]
+
+		const allVariables: { variableId: string; name: string }[] = [
+			...deviceVariables,
+			...bayVariables.flat(),
+			...networkVariables,
+		]
+
+		self.setVariableDefinitions(allVariables)
 	}
 }

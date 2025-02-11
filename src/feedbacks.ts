@@ -3,9 +3,16 @@ import type { ModuleInstance } from './main.js'
 import { graphics } from 'companion-module-utils'
 import { DantePortMapping, MuteOptions, MuteOptionsTable, SyncSettings, EWDXReceiver } from './ewdxReceiver.js'
 import { images } from './graphics.js'
-import { OptionsCorner, OptionsRect, OptionsIcon, OptionsBar } from 'companion-module-utils/dist/graphics.js'
+import {
+	OptionsCorner,
+	OptionsRect,
+	OptionsIcon,
+	OptionsBar,
+	OptionsCircle,
+	// eslint-disable-next-line n/no-missing-import
+} from 'companion-module-utils/dist/graphics.js'
 import { DeviceModel } from './receiver.js'
-import { ChargingDevice, CHG70N } from './chg70n.js'
+import { ChargingBayState, ChargingBayWarnings, ChargingDevice, CHG70N } from './chg70n.js'
 
 export function UpdateFeedbacks(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
@@ -701,9 +708,53 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					const warningProps: OptionsIcon = {
 						...commonIconProps,
 						offsetX: feedback.image.width - 2 - 16,
-						offsetY: 2,
+						offsetY: 3,
 						customWidth: 16,
 						customHeight: 16,
+					}
+
+					const overcurrentProps: OptionsIcon = {
+						...commonIconProps,
+						offsetX: 2,
+						offsetY: 37,
+						customWidth: 16,
+						customHeight: 16,
+					}
+
+					const temperatureProps: OptionsIcon = {
+						...commonIconProps,
+						offsetX: 19,
+						offsetY: 37,
+						customWidth: 16,
+						customHeight: 16,
+					}
+
+					const communicationErrorProps: OptionsIcon = {
+						...commonIconProps,
+						offsetX: 36,
+						offsetY: 37,
+						customWidth: 16,
+						customHeight: 16,
+					}
+
+					const chargeErrorProps: OptionsIcon = {
+						...commonIconProps,
+						offsetX: 55,
+						offsetY: 37,
+						customWidth: 16,
+						customHeight: 16,
+					}
+
+					const okCircleProps: OptionsCircle = {
+						radius: 6,
+						color: combineRgb(0, 255, 0),
+						opacity: 255,
+					}
+
+					const errorCircleProps: OptionsCircle = {
+						radius: 6,
+						color: combineRgb(255, 0, 0),
+						opacity: 255,
 					}
 
 					const identBarProps: OptionsBar = {
@@ -721,11 +772,80 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						opacity: 255,
 					}
 
-					if (device.chargingBays[bay].warnings.length > 0) {
+					if (device.chargingBays[bay].state == ChargingBayState.NORMAL) {
+						const circle = graphics.circle(okCircleProps)
+						elements.push(
+							graphics.icon({
+								width: feedback.image.width,
+								height: feedback.image.height,
+								custom: circle,
+								type: 'custom',
+								customHeight: 12,
+								customWidth: 12,
+								offsetX: 5,
+								offsetY: 4,
+							}),
+						)
+					} else {
+						const circle = graphics.circle(errorCircleProps)
+						elements.push(
+							graphics.icon({
+								width: feedback.image.width,
+								height: feedback.image.height,
+								custom: circle,
+								type: 'custom',
+								customHeight: 12,
+								customWidth: 12,
+								offsetX: 5,
+								offsetY: 4,
+							}),
+						)
+					}
+
+					if (device.chargingBays[bay].syncError) {
 						elements.push(
 							graphics.icon({
 								...warningProps,
 								custom: images.warning,
+							}),
+						)
+					}
+
+					if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryTempOutOfRange)) {
+						elements.push(
+							graphics.icon({
+								...temperatureProps,
+								custom: images.temperature,
+							}),
+						)
+					}
+
+					if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.OvercurrentDetected)) {
+						elements.push(
+							graphics.icon({
+								...overcurrentProps,
+								custom: images.overcurrent,
+							}),
+						)
+					}
+
+					if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryComError)) {
+						elements.push(
+							graphics.icon({
+								...communicationErrorProps,
+								custom: images.communicationError,
+							}),
+						)
+					}
+
+					if (
+						device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotChargeable) ||
+						device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotDischargeable)
+					) {
+						elements.push(
+							graphics.icon({
+								...chargeErrorProps,
+								custom: images.chargeError,
 							}),
 						)
 					}
@@ -793,6 +913,44 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const bay = Number(feedback.options.bay)
 				return device.chargingBays[bay].identification
+			},
+		}
+		feedbacks.bayWarnings = {
+			name: 'Charging Bay: Warnings',
+			description: 'Becomes active, if a specific warning is present in the selected charging bay',
+			type: 'boolean',
+			defaultStyle: {
+				bgcolor: combineRgb(255, 0, 0),
+			},
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+				{
+					id: 'warning',
+					type: 'dropdown',
+					label: 'Warning',
+					default: ChargingBayWarnings.OvercurrentDetected,
+					choices: [
+						{ id: ChargingBayWarnings.BatteryComError, label: 'Battery Communication Error' },
+						{ id: ChargingBayWarnings.BatteryNotChargeable, label: 'Battery not chargeable' },
+						{ id: ChargingBayWarnings.BatteryNotDischargeable, label: 'Battery not dischargeable' },
+						{ id: ChargingBayWarnings.BatteryTempOutOfRange, label: 'Battery temperature out of range' },
+						{ id: ChargingBayWarnings.OvercurrentDetected, label: 'Overcurrent detected' },
+					],
+				},
+			],
+			callback: (feedback) => {
+				const bay = Number(feedback.options.bay)
+				const warning = feedback.options.warning as ChargingBayWarnings
+				return device.chargingBays[bay].warnings.includes(warning)
 			},
 		}
 	}

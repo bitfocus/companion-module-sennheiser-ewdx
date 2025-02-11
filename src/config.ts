@@ -25,7 +25,7 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 				{ id: DeviceModel.EM2, label: 'EM2' },
 				{ id: DeviceModel.EM2_DANTE, label: 'EM2 Dante' },
 				{ id: DeviceModel.EM4, label: 'EM4' },
-				{ id: DeviceModel.CHG70N, label: 'CHG70N' },
+				{ id: DeviceModel.CHG70N, label: 'CHG70N-C' },
 			],
 		},
 	]
