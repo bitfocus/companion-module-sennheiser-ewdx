@@ -56,7 +56,6 @@ export class EWDXReceiver extends EWDX {
 	}
 
 	resetAllValues(): void {
-		console.log('RESETTING ALL RECEIVER VALUES')
 		this.resetValues()
 		this.publishVariableValues()
 		for (let i = 0; i <= this.channels.length - 1; i++) {
