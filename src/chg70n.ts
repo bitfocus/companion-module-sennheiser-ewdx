@@ -64,8 +64,24 @@ class ChargingBay {
 		this.batCycles = 0
 	}
 
+	resetValues() {
+		this.update = false
+		this.updateProgress = 0
+		this.updateError = UNKNOWN
+		this.warnings = []
+		this.txVersion = UNKNOWN
+		this.txSerial = UNKNOWN
+		this.chargingDevice = ChargingDevice.UNKNOWN
+		this.syncError = false
+		this.state = ChargingBayState.ERROR
+		this.identification = false
+		this.timeToFull = 0
+		this.batHealth = 0
+		this.batGauge = 0
+		this.batCycles = 0
+	}
+
 	publishVariableValues(): void {
-		console.log('Publishing Charging Bay vars')
 		this.parentDevice.context.setVariableValues({
 			[`bay${this.index}_update_progress`]: this.updateProgress,
 			[`bay${this.index}_update`]: this.update,
@@ -241,13 +257,29 @@ export class CHG70N extends EWDX {
 		this.chargingBays[1] = new ChargingBay(2, this)
 	}
 
+	resetAllValues(): void {
+		this.resetValues()
+		for (let i = 0; i <= 1; i++) {
+			this.chargingBays[i].resetValues()
+			this.chargingBays[i].publishVariableValues()
+		}
+	}
+
+	resetValues(): void {
+		this.productLabel = UNKNOWN
+		this.version = UNKNOWN
+		this.warnings = false
+		this.storageMode = false
+		this.chargingBays = []
+		this.cascades = []
+	}
+
 	getStaticInformation(): void {
 		this.sendCommand('/device/identity/version', null)
 		this.sendCommand('/device/identity/product', null)
 	}
 
 	publishVariableValues(): void {
-		console.log('Publishing device vars!!!')
 		this.context.setVariableValues({
 			device_location: this.location,
 			device_name: this.name,
@@ -273,7 +305,7 @@ export class CHG70N extends EWDX {
 					subscribe: [
 						{
 							'#': {
-								lifetime: 60,
+								lifetime: 10,
 							},
 							device: {
 								identification: {
@@ -344,8 +376,6 @@ export class CHG70N extends EWDX {
 
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	parseMessage(json: any): void {
-		console.log(json)
-
 		if (json.device) {
 			if (json.device.name != undefined) {
 				this.name = json.device.name
@@ -433,8 +463,6 @@ export class CHG70N extends EWDX {
 						)
 					})
 				}
-				console.log(this.chargingBays[0].warnings)
-				console.log(this.chargingBays[1].warnings)
 			}
 			if (json.bays.version != undefined) {
 				this.chargingBays[0].txVersion = json.bays.version[0]

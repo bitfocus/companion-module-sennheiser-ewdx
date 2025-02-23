@@ -40,6 +40,32 @@ export class EWDXReceiver extends EWDX {
 		}
 	}
 
+	resetValues(): void {
+		this.firmwareVersion = UNKNOWN
+		this.brightness = 0
+		this.encryption = false
+		this.frequencyCode = UNKNOWN
+		this.linkDensityMode = false
+		this.lock = false
+		this.serialNumber = UNKNOWN
+		this.danteVersion = UNKNOWN
+
+		this.dantePrimary.resetValues()
+		this.danteSecondary.resetValues()
+		this.networkInterface.resetValues()
+	}
+
+	resetAllValues(): void {
+		console.log('RESETTING ALL RECEIVER VALUES')
+		this.resetValues()
+		this.publishVariableValues()
+		for (let i = 0; i <= this.channels.length - 1; i++) {
+			this.channels[i].resetValues()
+			this.channels[i].mate.resetValues()
+			this.channels[i].publishVariableValues()
+		}
+	}
+
 	setBrightness(brightness: number): void {
 		this.sendCommand('/device/brightness', brightness)
 	}
@@ -171,7 +197,7 @@ export class EWDXReceiver extends EWDX {
 					subscribe: [
 						{
 							'#': {
-								lifetime: 60,
+								lifetime: 10,
 							},
 							rx1: { ...defaultRxSettings },
 							rx2: { ...defaultRxSettings },
@@ -470,6 +496,10 @@ export class EWDXReceiver extends EWDX {
 					}
 					if (json.m[rxKey].rsqi != undefined) {
 						this.channels[i - 1].rsqi = json.m[rxKey].rsqi
+						if (this.channels[i - 1].rsqi == 0) {
+							this.channels[i - 1].mate.resetValues()
+							this.channels[i - 1].publishVariableValues()
+						}
 					}
 				}
 			}
@@ -657,6 +687,23 @@ class TxMate {
 		this.cableEmulation = false
 		this.muteConfig = MuteOptions.off
 	}
+
+	resetValues(): void {
+		this.batteryGauge = 0
+		this.batteryType = UNKNOWN
+		this.batteryLifetime = 0
+		this.capsule = UNKNOWN
+		this.muted = false
+		this.type = UNKNOWN
+		this.trim = 0
+		this.name = UNKNOWN
+		this.lowcut = 0
+		this.lock = false
+		this.led = UNKNOWN
+		this.identification = false
+		this.cableEmulation = false
+		this.muteConfig = MuteOptions.off
+	}
 }
 
 export enum MuteOptions {
@@ -746,7 +793,36 @@ class RxChannel {
 		this.muted = false
 		this.mate = new TxMate(this.parentDevice)
 		this.gain = 0
-		this.frequency = 0
+		this.frequency = 0.0
+		this.audio = UNKNOWN
+		this.identification = false
+		this.activeAntenna = 0
+		this.rsqi = 0
+		this.warnings = false
+		this.syncIgnoreTrim = false
+		this.syncIgnoreName = false
+		this.syncIgnoreMuteConfig = false
+		this.syncIgnoreLowcut = false
+		this.syncIgnoreLock = false
+		this.syncIgnoreLED = false
+		this.syncIgnoreFrequency = false
+		this.syncIgnoreCableEmulation = false
+		this.syncTrim = 0
+		this.syncMuteConfigTS = MuteOptionsTable.off
+		this.syncMuteConfig = MuteOptions.off
+		this.syncLowcut = LowcutOptions.off
+		this.syncLock = false
+		this.syncLED = false
+		this.syncCableEmulation = false
+		this.hasAes256Error = false
+		this.hasAfPeakWarning = false
+	}
+
+	resetValues(): void {
+		this.name = UNKNOWN
+		this.muted = false
+		this.gain = 0
+		this.frequency = 0.0
 		this.audio = UNKNOWN
 		this.identification = false
 		this.activeAntenna = 0

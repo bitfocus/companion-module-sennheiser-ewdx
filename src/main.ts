@@ -38,7 +38,7 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 			} else {
 				this.device = new CHG70N(this, this.config.host)
 			}
-			this.updateStatus(InstanceStatus.Ok)
+			this.updateStatus(InstanceStatus.Connecting)
 
 			this.updateActions()
 			this.updateFeedbacks()

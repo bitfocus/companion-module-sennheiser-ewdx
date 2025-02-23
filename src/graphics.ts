@@ -28,6 +28,8 @@ const icons = {
 		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQBAMAAADt3eJSAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAABJQTFRF////AAAA/wAA/QAA/QAA/QAAISx/dgAAAAZ0Uk5T/wD/BAoCR4+L1gAAADtJREFUeJxjZIACRkYBMP0fG0MQxPr/npFRyBDIeHsfTer/B6y6MBgMDIHrwXYJ/mdghDI+CkAZYAEGAIKXFPTmTzGmAAAAAElFTkSuQmCC',
 	chargeError:
 		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAIFQTFRFAAAA/QAA/QAA/////////////QAA/QAA/QAA/QAA/////////////QAA/QAA/QAA/////////QAA/QAA/QAA/QAA/////////////QAA/QAA/////QAA/QAA/QAA/QAA/QAA/QAA/QAA/QAA/////QAA/QAA/QAA/////QAA/QAASZRZQQAAACt0Uk5TAApwg8nHNIeLZL0kzyr5Wlp2wf86BlDt12Bm/+vPBAj9NsuVwRTjEqssTOBzjJEAAAB3SURBVHicY2RAA4xECzAy/oMymBkZwXxGxj8MDKyMXxl5voDEeRkZPwIpAcb3jKy/QQJCQBWvGRjEgBRYQPIXAwP7M6AAKwNYQJT9OwMX4yOEAIP8SwnG+wwQLRBDlRjvMkANBVkrD7IVJAKyFuwaTcZrpPsFDgBe9xd3p/zORwAAAABJRU5ErkJggg==',
+	disconnected:
+		'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAAJxQTFRFAAAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA+oS5vgAAADR0Uk5TACKVRNf7vQTbTPnn/+MQ00CRFvVCob8gyQwyRggCl1w8m9EGj/0KVBIUjc9eKkoYzVJ+87CvRtUAAADGSURBVHicPY/JCgIxEESrUBOig8tJEVwOosxB/P+fUPCkgpcRFXFhcGESXGJH0YaEfiFV3UVIkS+5cyTvnoJe0wKGd0VeiTKZ1ngyNLyUs6L8qJNbNFPzTKGjM6slcgW0b8LoHC27YrUEeofAau2Ib2n3YZ+Fh2ZerX4MhnnBD32Lx0aW+PNCDjljTn+44xMglgHMs3IIepdgyKlICurhgl81UhJmAiplzo3g39rb2IwlaOQH85fMg6rtQnIRee+f0o5msgzevS1MYPhKkusAAAAASUVORK5CYII=',
 }
 
 export const images = {
@@ -49,4 +51,5 @@ export const images = {
 	overcurrent: await graphics.parseBase64(icons.overcurrent, { alpha: true }),
 	communicationError: await graphics.parseBase64(icons.communicationError, { alpha: true }),
 	chargeError: await graphics.parseBase64(icons.chargeError, { alpha: true }),
+	disconnected: await graphics.parseBase64(icons.disconnected, { alpha: true }),
 }

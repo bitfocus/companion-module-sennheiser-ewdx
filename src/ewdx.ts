@@ -1,9 +1,10 @@
 import { RemoteInfo } from 'dgram'
 import { ModuleInstance } from './main.js'
-import { SharedUdpSocket } from '@companion-module/base'
+import { InstanceStatus, SharedUdpSocket } from '@companion-module/base'
 
 export const UNKNOWN = 'nAn'
-const pollingInterval = 59000
+const pollingInterval = 9000
+const udpPort = 45
 
 export enum DeviceModel {
 	EM4,
@@ -34,6 +35,18 @@ export class NetworkInterface {
 		this.mac = UNKNOWN
 		this.name = UNKNOWN
 	}
+
+	resetValues(): void {
+		this.manualIP = UNKNOWN
+		this.manualNetmask = UNKNOWN
+		this.manualGateway = UNKNOWN
+		this.ip = UNKNOWN
+		this.netmask = UNKNOWN
+		this.gateway = UNKNOWN
+		this.dhcp = false
+		this.mac = UNKNOWN
+		this.name = UNKNOWN
+	}
 }
 
 export abstract class EWDX {
@@ -48,6 +61,9 @@ export abstract class EWDX {
 	networkInterface: NetworkInterface
 	mdns: boolean
 
+	deviceConnected: boolean
+	private responseTimeout?: NodeJS.Timeout
+
 	constructor(context: ModuleInstance, model: DeviceModel, host: string) {
 		this.context = context
 		this.model = model
@@ -57,6 +73,7 @@ export abstract class EWDX {
 		this.identification = false
 		this.networkInterface = new NetworkInterface()
 		this.mdns = false
+		this.deviceConnected = false
 
 		this.socket = context.createSharedUdpSocket('udp4', (msg, rinfo) => this.checkMessage(msg, rinfo))
 
@@ -72,15 +89,33 @@ export abstract class EWDX {
 			this.initSubscriptions()
 			this.getStaticInformation()
 		}, pollingInterval)
+
+		// Pinging the device every 5 seconds to make sure it did not went offline
+		setInterval(() => {
+			this.getName()
+		}, 5000)
 	}
 
 	checkMessage(raw: Uint8Array, rinfo: RemoteInfo): void {
-		//rinfo.port == 45
-		if (rinfo.address == this.host) {
+		if (rinfo.address == this.host && rinfo.port == udpPort) {
 			const message = Buffer.from(raw).toString()
 
 			const json: JSON = JSON.parse(message)
-			this.parseMessage(json)
+			if (json) {
+				this.parseMessage(json)
+			} else {
+				console.debug('Error parsing received message from device.')
+			}
+
+			if (this.deviceConnected == false) {
+				this.deviceConnected = true
+				this.context.updateStatus(InstanceStatus.Ok)
+			}
+
+			if (this.responseTimeout) {
+				clearTimeout(this.responseTimeout)
+				this.responseTimeout = undefined
+			}
 		}
 	}
 
@@ -91,11 +126,23 @@ export abstract class EWDX {
 	}
 
 	public sendMessage(message: string): void {
-		this.socket.send(message, 45, this.host)
+		this.socket.send(message, udpPort, this.host)
+		if (this.responseTimeout) {
+			clearTimeout(this.responseTimeout)
+		}
+		this.responseTimeout = setTimeout(() => {
+			this.resetAllValues()
+			this.deviceConnected = false
+			this.context.checkFeedbacks()
+			this.context.updateStatus(
+				InstanceStatus.Disconnected,
+				'Device not responding - make sure its connected and turned on.',
+			)
+		}, 2000)
 	}
 
 	private setupListeners() {
-		this.socket.bind(45, this.host, () => {
+		this.socket.bind(udpPort, this.host, () => {
 			console.log('Socket successfully connected.')
 		})
 
@@ -114,6 +161,10 @@ export abstract class EWDX {
 
 	setName(name: string): void {
 		this.sendCommand('/device/name', name)
+	}
+
+	getName(): void {
+		this.sendCommand('/device/name', null)
 	}
 
 	setLocation(location: string): void {
@@ -137,6 +188,7 @@ export abstract class EWDX {
 	abstract getStaticInformation(): void
 	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
 	abstract parseMessage(json: any): void
+	abstract resetAllValues(): void
 }
 
 function oscToJson(path: string, value: any): Record<string, any> {

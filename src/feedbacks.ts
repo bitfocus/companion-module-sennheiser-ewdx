@@ -335,262 +335,278 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const channel = Number(feedback.options.receiver)
 
 				if (feedback.image) {
-					const cornerOptionsLeft: OptionsCorner = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(0, 255, 0),
-						size: 15,
-						location: 'topLeft',
-						opacity: 255,
-					}
-					const cornerOptionsRight: OptionsCorner = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(0, 255, 0),
-						size: 15,
-						location: 'topRight',
-						opacity: 255,
-					}
-					const batterySymbolRed: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 30,
-						rectHeight: 13,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(255, 0, 0),
-						fillOpacity: 128,
-						offsetX: 20,
-						offsetY: 4,
-					}
-					const batterySymbolYellow: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 30,
-						rectHeight: 13,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(255, 255, 0),
-						fillOpacity: 128,
-						offsetX: 20,
-						offsetY: 4,
-					}
-					const batterySymbolGreen: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 30,
-						rectHeight: 13,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(0, 255, 0),
-						fillOpacity: 128,
-						offsetX: 20,
-						offsetY: 4,
-					}
-					const batteryOptions2: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 3,
-						rectHeight: 4,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(255, 255, 255),
-						fillOpacity: 255,
-						offsetX: 50,
-						offsetY: 8,
-					}
-
-					const elements: Uint8Array[] = []
-
-					if (receiver.channels[channel].activeAntenna == 1) {
-						elements.push(graphics.corner(cornerOptionsLeft))
-					} else if (receiver.channels[channel].activeAntenna == 2) {
-						elements.push(graphics.corner(cornerOptionsRight))
-					}
-
-					if (receiver.channels[channel].mate.batteryGauge > 50) {
-						elements.push(graphics.rect(batterySymbolGreen))
-					} else if (receiver.channels[channel].mate.batteryGauge >= 20) {
-						elements.push(graphics.rect(batterySymbolYellow))
-					} else {
-						elements.push(graphics.rect(batterySymbolRed))
-					}
-					elements.push(graphics.rect(batteryOptions2))
-
 					const commonIconProps: OptionsIcon = {
 						width: feedback.image.width,
 						height: feedback.image.height,
 						type: 'custom',
 					}
+					if (self.device.deviceConnected) {
+						const cornerOptionsLeft: OptionsCorner = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(0, 255, 0),
+							size: 15,
+							location: 'topLeft',
+							opacity: 255,
+						}
+						const cornerOptionsRight: OptionsCorner = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(0, 255, 0),
+							size: 15,
+							location: 'topRight',
+							opacity: 255,
+						}
+						const batterySymbolRed: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 30,
+							rectHeight: 13,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(255, 0, 0),
+							fillOpacity: 128,
+							offsetX: 20,
+							offsetY: 4,
+						}
+						const batterySymbolYellow: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 30,
+							rectHeight: 13,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(255, 255, 0),
+							fillOpacity: 128,
+							offsetX: 20,
+							offsetY: 4,
+						}
+						const batterySymbolGreen: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 30,
+							rectHeight: 13,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(0, 255, 0),
+							fillOpacity: 128,
+							offsetX: 20,
+							offsetY: 4,
+						}
+						const batteryOptions2: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 3,
+							rectHeight: 4,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(255, 255, 255),
+							fillOpacity: 255,
+							offsetX: 50,
+							offsetY: 8,
+						}
 
-					const antennaProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: 2,
-						offsetY: 53,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const elements: Uint8Array[] = []
 
-					const afPeakProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: feedback.image.width - 2 - 16,
-						offsetY: 15,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						if (receiver.channels[channel].activeAntenna == 1) {
+							elements.push(graphics.corner(cornerOptionsLeft))
+						} else if (receiver.channels[channel].activeAntenna == 2) {
+							elements.push(graphics.corner(cornerOptionsRight))
+						}
 
-					const shieldProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: feedback.image.width - 2 - 16,
-						offsetY: 53,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						if (receiver.channels[channel].mate.batteryGauge > 50) {
+							elements.push(graphics.rect(batterySymbolGreen))
+						} else if (receiver.channels[channel].mate.batteryGauge >= 20) {
+							elements.push(graphics.rect(batterySymbolYellow))
+						} else {
+							elements.push(graphics.rect(batterySymbolRed))
+						}
+						elements.push(graphics.rect(batteryOptions2))
 
-					const muteProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: 2,
-						offsetY: 34,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const antennaProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: 2,
+							offsetY: 53,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const warningProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: feedback.image.width - 2 - 16,
-						offsetY: 34,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const afPeakProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: feedback.image.width - 2 - 16,
+							offsetY: 15,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const identBarProps: OptionsBar = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						colors: [
-							{ size: 100, color: combineRgb(0, 255, 0), background: combineRgb(0, 255, 0), backgroundOpacity: 255 },
-						],
-						barLength: feedback.image.width,
-						barWidth: 2,
-						value: 100,
-						type: 'horizontal',
-						offsetX: 0,
-						offsetY: feedback.image.height - 2,
-						opacity: 255,
-					}
+						const shieldProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: feedback.image.width - 2 - 16,
+							offsetY: 53,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					if (receiver.channels[channel].hasAfPeakWarning == true) {
-						elements.push(
-							graphics.icon({
-								...afPeakProps,
-								custom: images.afpeak,
-							}),
-						)
-					}
+						const muteProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: 2,
+							offsetY: 34,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					if (receiver.channels[channel].identification) {
-						elements.push(graphics.bar(identBarProps))
-					}
+						const warningProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: feedback.image.width - 2 - 16,
+							offsetY: 34,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					if (receiver.channels[channel].warnings) {
-						elements.push(
-							graphics.icon({
-								...warningProps,
-								custom: images.warning,
-							}),
-						)
-					}
+						const identBarProps: OptionsBar = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							colors: [
+								{ size: 100, color: combineRgb(0, 255, 0), background: combineRgb(0, 255, 0), backgroundOpacity: 255 },
+							],
+							barLength: feedback.image.width,
+							barWidth: 2,
+							value: 100,
+							type: 'horizontal',
+							offsetX: 0,
+							offsetY: feedback.image.height - 2,
+							opacity: 255,
+						}
 
-					if (receiver.channels[channel].hasAes256Error) {
-						elements.push(
-							graphics.icon({
-								...shieldProps,
-								custom: images.shield.red,
-							}),
-						)
-					} else {
-						if (receiver.encryption) {
+						if (receiver.channels[channel].hasAfPeakWarning == true) {
+							elements.push(
+								graphics.icon({
+									...afPeakProps,
+									custom: images.afpeak,
+								}),
+							)
+						}
+
+						if (receiver.channels[channel].identification) {
+							elements.push(graphics.bar(identBarProps))
+						}
+
+						if (receiver.channels[channel].warnings) {
+							elements.push(
+								graphics.icon({
+									...warningProps,
+									custom: images.warning,
+								}),
+							)
+						}
+
+						if (receiver.channels[channel].hasAes256Error) {
 							elements.push(
 								graphics.icon({
 									...shieldProps,
-									custom: images.shield.green,
+									custom: images.shield.red,
+								}),
+							)
+						} else {
+							if (receiver.encryption) {
+								elements.push(
+									graphics.icon({
+										...shieldProps,
+										custom: images.shield.green,
+									}),
+								)
+							} else {
+								elements.push(
+									graphics.icon({
+										...shieldProps,
+										custom: images.shield.gray,
+									}),
+								)
+							}
+						}
+
+						if (receiver.channels[channel].rsqi > 70) {
+							elements.push(
+								graphics.icon({
+									...antennaProps,
+									custom: images.antenna.green,
+								}),
+							)
+						} else if (receiver.channels[channel].rsqi > 40) {
+							elements.push(
+								graphics.icon({
+									...antennaProps,
+									custom: images.antenna.yellow,
+								}),
+							)
+						} else if (receiver.channels[channel].rsqi >= 1) {
+							elements.push(
+								graphics.icon({
+									...antennaProps,
+									custom: images.antenna.red,
 								}),
 							)
 						} else {
 							elements.push(
 								graphics.icon({
-									...shieldProps,
-									custom: images.shield.gray,
+									...antennaProps,
+									custom: images.antenna.gray,
 								}),
 							)
 						}
-					}
+						if (receiver.channels[channel].mate.muted) {
+							elements.push(
+								graphics.icon({
+									...muteProps,
+									custom: images.mute,
+								}),
+							)
+						}
 
-					if (receiver.channels[channel].rsqi > 70) {
-						elements.push(
-							graphics.icon({
-								...antennaProps,
-								custom: images.antenna.green,
-							}),
-						)
-					} else if (receiver.channels[channel].rsqi > 40) {
-						elements.push(
-							graphics.icon({
-								...antennaProps,
-								custom: images.antenna.yellow,
-							}),
-						)
-					} else if (receiver.channels[channel].rsqi >= 1) {
-						elements.push(
-							graphics.icon({
-								...antennaProps,
-								custom: images.antenna.red,
-							}),
-						)
+						return {
+							imageBuffer: graphics.stackImage(elements),
+							text:
+								receiver.channels[channel].mate.batteryGauge +
+								'%\\n\\n' +
+								receiver.channels[channel].name +
+								'\\n' +
+								receiver.channels[channel].frequency.toString().slice(0, 3) +
+								'.' +
+								receiver.channels[channel].frequency.toString().slice(3) +
+								'\\n\\n' +
+								receiver.channels[channel].rsqi +
+								'%',
+						}
 					} else {
-						elements.push(
-							graphics.icon({
-								...antennaProps,
-								custom: images.antenna.gray,
-							}),
-						)
-					}
-					if (receiver.channels[channel].mate.muted) {
-						elements.push(
-							graphics.icon({
-								...muteProps,
-								custom: images.mute,
-							}),
-						)
-					}
+						const warningProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: feedback.image.width / 2 - 8,
+							offsetY: 8,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					return {
-						imageBuffer: graphics.stackImage(elements),
-						text:
-							receiver.channels[channel].mate.batteryGauge +
-							'%\\n\\n' +
-							receiver.channels[channel].name +
-							'\\n' +
-							receiver.channels[channel].frequency.toString().slice(0, 3) +
-							'.' +
-							receiver.channels[channel].frequency.toString().slice(3) +
-							'\\n\\n' +
-							receiver.channels[channel].rsqi +
-							'%',
+						return {
+							imageBuffer: graphics.icon({
+								...warningProps,
+								custom: images.disconnected,
+							}),
+							text: '\\nReceiver not connected',
+						}
 					}
-				} else
+				} else {
 					return {
 						imageBuffer: new Uint8Array(),
 					}
+				}
 			},
 		}
 		/* Dante model specific feedbacks  */
 		if (self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) {
-			// const receiver: EWDXReceiver = self.receiver
-
 			if (self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) {
 				feedbacks.dante_port_mapping = {
 					name: 'Dante: Port Mapping',
@@ -644,233 +660,250 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: async (feedback) => {
 				const bay = Number(feedback.options.bay)
 				if (feedback.image) {
-					const elements: Uint8Array[] = []
-
 					const commonIconProps: OptionsIcon = {
 						width: feedback.image.width,
 						height: feedback.image.height,
 						type: 'custom',
 					}
+					if (self.device.deviceConnected) {
+						const elements: Uint8Array[] = []
 
-					const batterySymbolRed: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 30,
-						rectHeight: 13,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(255, 0, 0),
-						fillOpacity: 128,
-						offsetX: 20,
-						offsetY: 4,
-					}
-					const batterySymbolYellow: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 30,
-						rectHeight: 13,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(255, 255, 0),
-						fillOpacity: 128,
-						offsetX: 20,
-						offsetY: 4,
-					}
-					const batterySymbolGreen: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 30,
-						rectHeight: 13,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(0, 255, 0),
-						fillOpacity: 128,
-						offsetX: 20,
-						offsetY: 4,
-					}
-					const batteryOptions2: OptionsRect = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						color: combineRgb(255, 255, 255),
-						rectWidth: 3,
-						rectHeight: 4,
-						strokeWidth: 1,
-						opacity: 255,
-						fillColor: combineRgb(255, 255, 255),
-						fillOpacity: 255,
-						offsetX: 50,
-						offsetY: 8,
-					}
+						const batterySymbolRed: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 30,
+							rectHeight: 13,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(255, 0, 0),
+							fillOpacity: 128,
+							offsetX: 20,
+							offsetY: 4,
+						}
+						const batterySymbolYellow: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 30,
+							rectHeight: 13,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(255, 255, 0),
+							fillOpacity: 128,
+							offsetX: 20,
+							offsetY: 4,
+						}
+						const batterySymbolGreen: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 30,
+							rectHeight: 13,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(0, 255, 0),
+							fillOpacity: 128,
+							offsetX: 20,
+							offsetY: 4,
+						}
+						const batteryOptions2: OptionsRect = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							color: combineRgb(255, 255, 255),
+							rectWidth: 3,
+							rectHeight: 4,
+							strokeWidth: 1,
+							opacity: 255,
+							fillColor: combineRgb(255, 255, 255),
+							fillOpacity: 255,
+							offsetX: 50,
+							offsetY: 8,
+						}
 
-					const warningProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: feedback.image.width - 2 - 16,
-						offsetY: 3,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const warningProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: feedback.image.width - 2 - 16,
+							offsetY: 3,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const overcurrentProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: 2,
-						offsetY: 37,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const overcurrentProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: 2,
+							offsetY: 37,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const temperatureProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: 19,
-						offsetY: 37,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const temperatureProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: 19,
+							offsetY: 37,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const communicationErrorProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: 36,
-						offsetY: 37,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const communicationErrorProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: 36,
+							offsetY: 37,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const chargeErrorProps: OptionsIcon = {
-						...commonIconProps,
-						offsetX: 55,
-						offsetY: 37,
-						customWidth: 16,
-						customHeight: 16,
-					}
+						const chargeErrorProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: 55,
+							offsetY: 37,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					const okCircleProps: OptionsCircle = {
-						radius: 6,
-						color: combineRgb(0, 255, 0),
-						opacity: 255,
-					}
+						const okCircleProps: OptionsCircle = {
+							radius: 6,
+							color: combineRgb(0, 255, 0),
+							opacity: 255,
+						}
 
-					const errorCircleProps: OptionsCircle = {
-						radius: 6,
-						color: combineRgb(255, 0, 0),
-						opacity: 255,
-					}
+						const errorCircleProps: OptionsCircle = {
+							radius: 6,
+							color: combineRgb(255, 0, 0),
+							opacity: 255,
+						}
 
-					const identBarProps: OptionsBar = {
-						width: feedback.image.width,
-						height: feedback.image.height,
-						colors: [
-							{ size: 100, color: combineRgb(0, 255, 0), background: combineRgb(0, 255, 0), backgroundOpacity: 255 },
-						],
-						barLength: feedback.image.width,
-						barWidth: 2,
-						value: 100,
-						type: 'horizontal',
-						offsetX: 0,
-						offsetY: feedback.image.height - 2,
-						opacity: 255,
-					}
+						const identBarProps: OptionsBar = {
+							width: feedback.image.width,
+							height: feedback.image.height,
+							colors: [
+								{ size: 100, color: combineRgb(0, 255, 0), background: combineRgb(0, 255, 0), backgroundOpacity: 255 },
+							],
+							barLength: feedback.image.width,
+							barWidth: 2,
+							value: 100,
+							type: 'horizontal',
+							offsetX: 0,
+							offsetY: feedback.image.height - 2,
+							opacity: 255,
+						}
 
-					if (device.chargingBays[bay].state == ChargingBayState.NORMAL) {
-						const circle = graphics.circle(okCircleProps)
-						elements.push(
-							graphics.icon({
-								width: feedback.image.width,
-								height: feedback.image.height,
-								custom: circle,
-								type: 'custom',
-								customHeight: 12,
-								customWidth: 12,
-								offsetX: 5,
-								offsetY: 4,
-							}),
-						)
+						if (device.chargingBays[bay].state == ChargingBayState.NORMAL) {
+							const circle = graphics.circle(okCircleProps)
+							elements.push(
+								graphics.icon({
+									width: feedback.image.width,
+									height: feedback.image.height,
+									custom: circle,
+									type: 'custom',
+									customHeight: 12,
+									customWidth: 12,
+									offsetX: 5,
+									offsetY: 4,
+								}),
+							)
+						} else {
+							const circle = graphics.circle(errorCircleProps)
+							elements.push(
+								graphics.icon({
+									width: feedback.image.width,
+									height: feedback.image.height,
+									custom: circle,
+									type: 'custom',
+									customHeight: 12,
+									customWidth: 12,
+									offsetX: 5,
+									offsetY: 4,
+								}),
+							)
+						}
+
+						if (device.chargingBays[bay].syncError) {
+							elements.push(
+								graphics.icon({
+									...warningProps,
+									custom: images.warning,
+								}),
+							)
+						}
+
+						if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryTempOutOfRange)) {
+							elements.push(
+								graphics.icon({
+									...temperatureProps,
+									custom: images.temperature,
+								}),
+							)
+						}
+
+						if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.OvercurrentDetected)) {
+							elements.push(
+								graphics.icon({
+									...overcurrentProps,
+									custom: images.overcurrent,
+								}),
+							)
+						}
+
+						if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryComError)) {
+							elements.push(
+								graphics.icon({
+									...communicationErrorProps,
+									custom: images.communicationError,
+								}),
+							)
+						}
+
+						if (
+							device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotChargeable) ||
+							device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotDischargeable)
+						) {
+							elements.push(
+								graphics.icon({
+									...chargeErrorProps,
+									custom: images.chargeError,
+								}),
+							)
+						}
+
+						if (device.chargingBays[bay].identification) {
+							elements.push(graphics.bar(identBarProps))
+						}
+
+						if (device.chargingBays[bay].batGauge > 60) {
+							elements.push(graphics.rect(batterySymbolGreen))
+						} else if (device.chargingBays[bay].batGauge > 20) {
+							elements.push(graphics.rect(batterySymbolYellow))
+						} else {
+							elements.push(graphics.rect(batterySymbolRed))
+						}
+						elements.push(graphics.rect(batteryOptions2))
+
+						return {
+							imageBuffer: graphics.stackImage(elements),
+							text:
+								device.chargingBays[bay].batGauge +
+								'%\\n\\nFull: ' +
+								device.chargingBays[bay].timeToFull +
+								' min\\n\\n\\n' +
+								ChargingDevice[device.chargingBays[bay].chargingDevice],
+						}
 					} else {
-						const circle = graphics.circle(errorCircleProps)
-						elements.push(
-							graphics.icon({
-								width: feedback.image.width,
-								height: feedback.image.height,
-								custom: circle,
-								type: 'custom',
-								customHeight: 12,
-								customWidth: 12,
-								offsetX: 5,
-								offsetY: 4,
-							}),
-						)
-					}
+						const warningProps: OptionsIcon = {
+							...commonIconProps,
+							offsetX: feedback.image.width / 2 - 8,
+							offsetY: 2,
+							customWidth: 16,
+							customHeight: 16,
+						}
 
-					if (device.chargingBays[bay].syncError) {
-						elements.push(
-							graphics.icon({
+						return {
+							imageBuffer: graphics.icon({
 								...warningProps,
-								custom: images.warning,
+								custom: images.disconnected,
 							}),
-						)
-					}
-
-					if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryTempOutOfRange)) {
-						elements.push(
-							graphics.icon({
-								...temperatureProps,
-								custom: images.temperature,
-							}),
-						)
-					}
-
-					if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.OvercurrentDetected)) {
-						elements.push(
-							graphics.icon({
-								...overcurrentProps,
-								custom: images.overcurrent,
-							}),
-						)
-					}
-
-					if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryComError)) {
-						elements.push(
-							graphics.icon({
-								...communicationErrorProps,
-								custom: images.communicationError,
-							}),
-						)
-					}
-
-					if (
-						device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotChargeable) ||
-						device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotDischargeable)
-					) {
-						elements.push(
-							graphics.icon({
-								...chargeErrorProps,
-								custom: images.chargeError,
-							}),
-						)
-					}
-
-					if (device.chargingBays[bay].identification) {
-						elements.push(graphics.bar(identBarProps))
-					}
-
-					if (device.chargingBays[bay].batGauge > 60) {
-						elements.push(graphics.rect(batterySymbolGreen))
-					} else if (device.chargingBays[bay].batGauge > 20) {
-						elements.push(graphics.rect(batterySymbolYellow))
-					} else {
-						elements.push(graphics.rect(batterySymbolRed))
-					}
-					elements.push(graphics.rect(batteryOptions2))
-
-					return {
-						imageBuffer: graphics.stackImage(elements),
-						text:
-							device.chargingBays[bay].batGauge +
-							'%\\n\\nFull: ' +
-							device.chargingBays[bay].timeToFull +
-							' min\\n\\n\\n' +
-							ChargingDevice[device.chargingBays[bay].chargingDevice],
+							text: '\\nCharger not connected',
+						}
 					}
 				} else {
 					return {

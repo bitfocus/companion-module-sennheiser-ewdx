@@ -5,7 +5,6 @@ import { EWDXReceiver } from './ewdxReceiver.js'
 import { CHG70N } from './chg70n.js'
 
 export function UpdatePresets(self: ModuleInstance): void {
-	// Helper function to create presets
 	const presets: CompanionPresetDefinitions = {}
 
 	if (self.device instanceof EWDXReceiver) {
