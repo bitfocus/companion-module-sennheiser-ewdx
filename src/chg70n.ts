@@ -270,7 +270,6 @@ export class CHG70N extends EWDX {
 		this.version = UNKNOWN
 		this.warnings = false
 		this.storageMode = false
-		this.chargingBays = []
 		this.cascades = []
 	}
 
