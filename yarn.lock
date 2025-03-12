@@ -40,7 +40,7 @@ __metadata:
   languageName: node
   linkType: hard
 
-"@companion-module/tools@npm:^2.1.1":
+"@companion-module/tools@npm:^2.2.2":
   version: 2.2.2
   resolution: "@companion-module/tools@npm:2.2.2"
   dependencies:
@@ -1102,7 +1102,7 @@ __metadata:
   resolution: "companion-module-sennnheiser-ewdx@workspace:."
   dependencies:
     "@companion-module/base": "npm:^1.11.3"
-    "@companion-module/tools": "npm:^2.1.1"
+    "@companion-module/tools": "npm:^2.2.2"
     "@types/jest": "npm:^29.5.14"
     "@types/node": "npm:^22.10.2"
     companion-module-utils: "npm:^0.5.0"
