@@ -5,5 +5,4 @@ package-lock.json
 /dist
 DEBUG-*
 /.yarn
-yarn.lock
 .DS_STORE
