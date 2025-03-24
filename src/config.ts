@@ -19,7 +19,7 @@ export function GetConfigFields(): SomeCompanionConfigField[] {
 			type: 'dropdown',
 			width: 12,
 			id: 'model',
-			label: 'Select Receiver Model',
+			label: 'Select Device Model',
 			default: DeviceModel.EM4,
 			choices: [
 				{ id: DeviceModel.EM2, label: 'EM2' },
