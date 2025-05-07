@@ -1,6 +1,6 @@
 {
 	"name": "companion-module-sennnheiser-ewdx",
-	"version": "1.0.0",
+	"version": "1.0.3",
 	"main": "dist/main.js",
 	"type": "module",
 	"scripts": {
