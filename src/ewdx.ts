@@ -99,7 +99,7 @@ export abstract class EWDX {
 	checkMessage(raw: Uint8Array, rinfo: RemoteInfo): void {
 		if (rinfo.address == this.host && rinfo.port == udpPort) {
 			const message = Buffer.from(raw).toString()
-
+			console.log(message)
 			const json: JSON = JSON.parse(message)
 			if (json) {
 				this.parseMessage(json)
@@ -123,6 +123,7 @@ export abstract class EWDX {
 		const cmd = oscToJson(path, value)
 		const message = JSON.stringify(cmd)
 		this.sendMessage(message)
+		this.context.log('debug', `Sending command: ${message}`)
 	}
 
 	public sendMessage(message: string): void {

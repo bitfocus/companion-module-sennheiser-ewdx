@@ -7,13 +7,13 @@ on:
     tags:
       - 'v[0-9]+.[0-9]+.[0-9]+*'
   pull_request:
- 
+
 jobs:
   lint:
     name: Lint
     runs-on: ubuntu-latest
     timeout-minutes: 15
- 
+
     steps:
       - uses: actions/checkout@v4
       - name: Use Node.js 22.x
@@ -48,7 +48,7 @@ jobs:
           yarn lint
         env:
           CI: true
- 
+
   # Uncomment this to enable running unit tests
   # test:
   #   name: Test
