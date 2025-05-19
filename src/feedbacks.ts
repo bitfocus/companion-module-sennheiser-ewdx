@@ -1,18 +1,11 @@
-import { combineRgb, CompanionFeedbackDefinitions } from '@companion-module/base'
 import type { ModuleInstance } from './main.js'
 import { graphics } from 'companion-module-utils'
 import { DantePortMapping, MuteOptions, MuteOptionsTable, SyncSettings, EWDXReceiver } from './ewdxReceiver.js'
 import { images } from './graphics.js'
-import {
-	OptionsCorner,
-	OptionsRect,
-	OptionsIcon,
-	OptionsBar,
-	OptionsCircle,
-	// eslint-disable-next-line n/no-missing-import
-} from 'companion-module-utils/dist/graphics.js'
+
 import { DeviceModel } from './ewdx.js'
 import { ChargingBayState, ChargingBayWarnings, ChargingDevice, CHG70N } from './chg70n.js'
+import { combineRgb, CompanionFeedbackDefinitions } from '@companion-module/base'
 
 export function UpdateFeedbacks(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
@@ -335,13 +328,13 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const channel = Number(feedback.options.receiver)
 
 				if (feedback.image) {
-					const commonIconProps: OptionsIcon = {
+					const commonIconProps: graphics.OptionsIcon = {
 						width: feedback.image.width,
 						height: feedback.image.height,
 						type: 'custom',
 					}
 					if (self.device.deviceConnected) {
-						const cornerOptionsLeft: OptionsCorner = {
+						const cornerOptionsLeft: graphics.OptionsCorner = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(0, 255, 0),
@@ -349,7 +342,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							location: 'topLeft',
 							opacity: 255,
 						}
-						const cornerOptionsRight: OptionsCorner = {
+						const cornerOptionsRight: graphics.OptionsCorner = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(0, 255, 0),
@@ -357,7 +350,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							location: 'topRight',
 							opacity: 255,
 						}
-						const batterySymbolRed: OptionsRect = {
+						const batterySymbolRed: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -370,7 +363,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetX: 20,
 							offsetY: 4,
 						}
-						const batterySymbolYellow: OptionsRect = {
+						const batterySymbolYellow: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -383,7 +376,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetX: 20,
 							offsetY: 4,
 						}
-						const batterySymbolGreen: OptionsRect = {
+						const batterySymbolGreen: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -396,7 +389,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetX: 20,
 							offsetY: 4,
 						}
-						const batteryOptions2: OptionsRect = {
+						const batteryOptions2: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -427,7 +420,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						}
 						elements.push(graphics.rect(batteryOptions2))
 
-						const antennaProps: OptionsIcon = {
+						const antennaProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 2,
 							offsetY: 53,
@@ -435,7 +428,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const afPeakProps: OptionsIcon = {
+						const afPeakProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
 							offsetY: 15,
@@ -443,7 +436,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const shieldProps: OptionsIcon = {
+						const shieldProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
 							offsetY: 53,
@@ -451,7 +444,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const muteProps: OptionsIcon = {
+						const muteProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 2,
 							offsetY: 34,
@@ -459,7 +452,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const warningProps: OptionsIcon = {
+						const warningProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
 							offsetY: 34,
@@ -467,7 +460,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const identBarProps: OptionsBar = {
+						const identBarProps: graphics.OptionsBar = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							colors: [
@@ -567,11 +560,25 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							)
 						}
 
+						let batteryInfo
+
+						if (
+							receiver.channels[channel].mate.batteryType === 'Battery' &&
+							receiver.channels[channel].mate.batteryLifetime != 0
+						) {
+							const minutes = receiver.channels[channel].mate.batteryLifetime
+							const hours = Math.floor(minutes / 60)
+							const remainingMinutes = minutes % 60
+							batteryInfo = `${hours}:${remainingMinutes}h`
+						} else {
+							batteryInfo = `${receiver.channels[channel].mate.batteryGauge}%`
+						}
+
 						return {
 							imageBuffer: graphics.stackImage(elements),
 							text:
-								receiver.channels[channel].mate.batteryGauge +
-								'%\\n\\n' +
+								batteryInfo +
+								'\\n\\n' +
 								receiver.channels[channel].name +
 								'\\n' +
 								receiver.channels[channel].frequency.toString().slice(0, 3) +
@@ -582,7 +589,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 								'%',
 						}
 					} else {
-						const warningProps: OptionsIcon = {
+						const warningProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width / 2 - 8,
 							offsetY: 8,
@@ -660,7 +667,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: async (feedback) => {
 				const bay = Number(feedback.options.bay)
 				if (feedback.image) {
-					const commonIconProps: OptionsIcon = {
+					const commonIconProps: graphics.OptionsIcon = {
 						width: feedback.image.width,
 						height: feedback.image.height,
 						type: 'custom',
@@ -668,7 +675,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					if (self.device.deviceConnected) {
 						const elements: Uint8Array[] = []
 
-						const batterySymbolRed: OptionsRect = {
+						const batterySymbolRed: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -681,7 +688,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetX: 20,
 							offsetY: 4,
 						}
-						const batterySymbolYellow: OptionsRect = {
+						const batterySymbolYellow: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -694,7 +701,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetX: 20,
 							offsetY: 4,
 						}
-						const batterySymbolGreen: OptionsRect = {
+						const batterySymbolGreen: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -707,7 +714,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetX: 20,
 							offsetY: 4,
 						}
-						const batteryOptions2: OptionsRect = {
+						const batteryOptions2: graphics.OptionsRect = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							color: combineRgb(255, 255, 255),
@@ -721,7 +728,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetY: 8,
 						}
 
-						const warningProps: OptionsIcon = {
+						const warningProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
 							offsetY: 3,
@@ -729,7 +736,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const overcurrentProps: OptionsIcon = {
+						const overcurrentProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 2,
 							offsetY: 37,
@@ -737,7 +744,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const temperatureProps: OptionsIcon = {
+						const temperatureProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 19,
 							offsetY: 37,
@@ -745,7 +752,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const communicationErrorProps: OptionsIcon = {
+						const communicationErrorProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 36,
 							offsetY: 37,
@@ -753,7 +760,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const chargeErrorProps: OptionsIcon = {
+						const chargeErrorProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 55,
 							offsetY: 37,
@@ -761,19 +768,19 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const okCircleProps: OptionsCircle = {
+						const okCircleProps: graphics.OptionsCircle = {
 							radius: 6,
 							color: combineRgb(0, 255, 0),
 							opacity: 255,
 						}
 
-						const errorCircleProps: OptionsCircle = {
+						const errorCircleProps: graphics.OptionsCircle = {
 							radius: 6,
 							color: combineRgb(255, 0, 0),
 							opacity: 255,
 						}
 
-						const identBarProps: OptionsBar = {
+						const identBarProps: graphics.OptionsBar = {
 							width: feedback.image.width,
 							height: feedback.image.height,
 							colors: [
@@ -889,7 +896,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 								ChargingDevice[device.chargingBays[bay].chargingDevice],
 						}
 					} else {
-						const warningProps: OptionsIcon = {
+						const warningProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width / 2 - 8,
 							offsetY: 2,

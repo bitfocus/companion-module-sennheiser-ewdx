@@ -944,9 +944,10 @@ class RxChannel {
 		if (name.length > 8) {
 			name = name.substring(0, 8)
 		}
-
+		name = name.toUpperCase()
 		const command = '/rx' + this.index + '/name'
 		this.parentDevice.sendCommand(command, name)
+		console.log('Name set to: ' + name)
 	}
 
 	setGain(gain: number): void {
