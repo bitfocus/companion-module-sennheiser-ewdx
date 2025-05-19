@@ -567,11 +567,25 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							)
 						}
 
+						let batteryInfo
+
+						if (
+							receiver.channels[channel].mate.batteryType === 'Battery' &&
+							receiver.channels[channel].mate.batteryLifetime != 0
+						) {
+							const minutes = receiver.channels[channel].mate.batteryLifetime
+							const hours = Math.floor(minutes / 60)
+							const remainingMinutes = minutes % 60
+							batteryInfo = `${hours}:${remainingMinutes}h`
+						} else {
+							batteryInfo = `${receiver.channels[channel].mate.batteryGauge}%`
+						}
+
 						return {
 							imageBuffer: graphics.stackImage(elements),
 							text:
-								receiver.channels[channel].mate.batteryGauge +
-								'%\\n\\n' +
+								batteryInfo +
+								'\\n\\n' +
 								receiver.channels[channel].name +
 								'\\n' +
 								receiver.channels[channel].frequency.toString().slice(0, 3) +
