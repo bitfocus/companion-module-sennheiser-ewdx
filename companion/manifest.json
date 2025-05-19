@@ -3,7 +3,7 @@
 	"name": "sennheiser-ewdx",
 	"shortname": "sennheiser-ewdx",
 	"description": "Control devices of the Sennheiser EW-DX Series",
-	"version": "1.0.2",
+	"version": "1.0.4",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-sennheiser-ewdx.git",
 	"bugs": "https://github.com/bitfocus/companion-module-sennheiser-ewdx/issues",
