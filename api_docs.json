@@ -1,0 +1,2205 @@
+{
+	"openapi": "3.1.0",
+	"info": { "title": "EW-DX service API", "version": "1.7" },
+	"servers": [{ "url": "https://{deviceIP}:443", "variables": { "deviceIP": { "default": "" } } }],
+	"components": {
+		"securitySchemes": {
+			"basicAuthInitialSennheiser": {
+				"type": "http",
+				"scheme": "basic",
+				"description": "Username\\:initialSennheiser, Password\\:initial password (unique per device if mention on type plate or common default password \"sennheiser\" that has to be changed before using the device); the initial user of the device, to be used for mandatory configuration of the control user"
+			},
+			"basicAuthControlSennheiser": {
+				"type": "http",
+				"scheme": "basic",
+				"description": "Username\\:controlSennheiser, Password\\:given by the user when \\\"claiming\\\" the device; the normal user of the device, to be used by the Sennheiser client software (e.g. Sennheiser Control Cockpit)"
+			},
+			"basicAuthApi": {
+				"type": "http",
+				"scheme": "basic",
+				"description": "Username\\:api, Password\\:given by the user when \\\"allowing\\\" third party access to the device; the user for third party access to the device with no rights to reconfigure vital configurations"
+			}
+		}
+	},
+	"security": [{ "basicAuthInitialSennheiser": [] }, { "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+	"paths": {
+		"/api/device/licenseAgreements/licenses": {
+			"get": {
+				"summary": "Retrieve the PDF of the OpenSource licenses used by software on the device",
+				"tags": ["LicenseAgreements"],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": { "application/pdf": { "schema": { "type": "string", "format": "binary" } } }
+					},
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g. this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/device/licenseAgreements/hash": {
+			"get": {
+				"summary": "Retrieve a SHA-256 hash of the license agreements file",
+				"tags": ["LicenseAgreements"],
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"value": {
+											"type": "string",
+											"example": "e4491bb82bf36d124f92d4bba1edac60f6178e92a3b89c436fb660b99c10d538"
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/firmware/update/state": {
+			"get": {
+				"tags": ["Firmware Update"],
+				"summary": "Get the state of a firmware update",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"deviceVersion": {
+											"type": "string",
+											"description": "The firmware version of the system running at the moment."
+										},
+										"danteVersion": {
+											"type": "string",
+											"description": "The Dante firmware version of the system running at the moment."
+										},
+										"state": { "type": "string", "default": "Idle", "enum": ["Updating", "Idle"] },
+										"progress": {
+											"type": "integer",
+											"format": "uint8",
+											"minimum": 0,
+											"maximum": 100,
+											"default": 0,
+											"description": "Progress in percent"
+										},
+										"lastStatus": {
+											"description": "Value is reset to None after reboot and on every start of FW update",
+											"type": "string",
+											"default": "None",
+											"example": "Invalid firmware package",
+											"enum": ["None", "Invalid firmware package"]
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/ssc/version": {
+			"get": {
+				"tags": ["SSC"],
+				"summary": "Get the schema version",
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"protocol": { "type": "string", "example": "2.3", "description": "The version of SSC protocol." },
+										"schema": {
+											"type": "string",
+											"example": "1.0",
+											"description": "This is the schema version of the API of the EW-DX devices. Semantic versioning must be used. So additional paths or properties will increase the minor number while breaking changes increase the integer part before the decimal point."
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/ssc/schema": {
+			"get": {
+				"tags": ["SSC"],
+				"summary": "Get the address tree",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": { "application/openapi+json": { "schema": { "type": "string" } } }
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/ssc/state/subscriptions": {
+			"get": {
+				"tags": ["SSC"],
+				"summary": "Start a subscription",
+				"description": "Start a subscription. A successful request returns a UUID that can be used to manage the created subscription. The ``/ssc/state`` address is specific to the session between client and server. This means that it is possible that different clients subscribe the same command with different arguments hence the immediate reply as well as the resulting state of the server will differ for each client respectively. This also means, that there can be only a limited number of sessions per client and user. Instead of generating new subscriptions the \"old\" subscription should be altered.",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation returning the UUID to manage this subscription and the initial Server Side Event (SSE) stream",
+						"headers": {
+							"Content-Location": {
+								"description": "UUID of the just created subscription return in the Location Field of the HTTP response header",
+								"schema": { "type": "string", "example": "31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8" }
+							}
+						},
+						"content": {
+							"text/event-stream": {
+								"schema": {
+									"type": "string",
+									"description": "An initial stream (almost like a text file).",
+									"example": "event:open\\ndata:{\"path\":\"/api/ssc/state/subscriptions/31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8\",\"sessionUUID\":\"31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8\"}\\n\\n"
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/ssc/state/subscriptions/{sessionUUID}": {
+			"get": {
+				"tags": ["SSC"],
+				"summary": "Get the subscription list",
+				"description": "Get the list of subscriptions associated with the sessionUUID",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "sessionUUID",
+						"in": "path",
+						"required": true,
+						"description": "The unique session id of the subscription",
+						"schema": { "type": "string", "example": "31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8" }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"example": ["/device/site", "/device/identification"],
+									"items": { "type": "string", "example": "/device/site" }
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"422": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			},
+			"put": {
+				"tags": ["SSC"],
+				"summary": "Set or change the list of subscriptions associated with the sessionUUID",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "sessionUUID",
+						"in": "path",
+						"required": true,
+						"description": "The unique session id of the subscription",
+						"schema": { "type": "string", "example": "31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "array",
+								"example": ["/device/site", "/device/identification", "/device/state"],
+								"items": { "type": "string", "example": "/device/site" }
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"422": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			},
+			"delete": {
+				"summary": "End an existing subscription",
+				"description": "End the subscription associated with the sessionUUID",
+				"tags": ["SSC"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "sessionUUID",
+						"in": "path",
+						"required": true,
+						"description": "The unique session id of the subscription",
+						"schema": { "type": "string", "example": "31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8" }
+					}
+				],
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"422": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/ssc/state/subscriptions/{sessionUUID}/add": {
+			"put": {
+				"tags": ["SSC"],
+				"summary": "Add resource(s) to the subscription list",
+				"description": "Add a set of resources to the list of subscriptions associated with the sessionUUID",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "sessionUUID",
+						"in": "path",
+						"required": true,
+						"description": "The unique session id of the subscription",
+						"schema": { "type": "string", "example": "31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "array",
+								"example": ["/device/site", "/device/identification"],
+								"items": { "type": "string", "example": "/device/site" }
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": {
+						"description": "The request to add to the subscription was invalid",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"path": { "type": "string", "example": "/api/ssc/invalid" },
+										"error": { "type": "integer", "example": 404 }
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"422": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/ssc/state/subscriptions/{sessionUUID}/remove": {
+			"put": {
+				"tags": ["SSC"],
+				"summary": "Remove resource(s) from the subscription list",
+				"description": "Remove a set of resources from the list of subscriptions associated with the sessionUUID",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "sessionUUID",
+						"in": "path",
+						"required": true,
+						"description": "The unique session id of the subscription",
+						"schema": { "type": "string", "example": "31875a94-29e6-4fb0-ab4d-7f0bbd6e1bc8" }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "type": "array", "items": { "type": "string", "example": "/api/device/site" } }
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": {
+						"description": "The request to remove to the subscription was invalid",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"path": { "type": "string", "example": "/api/ssc/version" },
+										"error": { "type": "integer", "example": 404 }
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"422": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/device/identification": {
+			"get": {
+				"tags": ["Device"],
+				"summary": "Get the state of device identification",
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": { "type": "object", "properties": { "visual": { "type": "boolean", "default": false } } }
+							}
+						}
+					},
+					"500": { "description": "Internal server error" }
+				}
+			},
+			"put": {
+				"tags": ["Device"],
+				"summary": "Set the state of device identification",
+				"security": [],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "type": "object", "properties": { "visual": { "type": "boolean", "example": false } } }
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"409": {
+						"description": "Conflict. Activating identification was not possible because of internal device state."
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/device/site": {
+			"get": {
+				"tags": ["Device"],
+				"summary": "Get the device site information",
+				"security": [
+					{ "basicAuthInitialSennheiser": [] },
+					{ "basicAuthControlSennheiser": [] },
+					{ "basicAuthApi": [] }
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"deviceName": {
+											"description": "Name of the device, most likely the default production device name.",
+											"type": "string",
+											"default": "EWDXEM2",
+											"minLength": 1,
+											"maxLength": 18,
+											"pattern": "^[a-zA-Z0-9]*$"
+										},
+										"location": {
+											"type": "string",
+											"minLength": 0,
+											"maxLength": 255,
+											"pattern": "^[\\x20-\\x7E^\\x22\\x27\\x2F\\x5C]*$",
+											"example": "Building 5, Room 15",
+											"default": ""
+										},
+										"position": {
+											"type": "string",
+											"minLength": 0,
+											"maxLength": 0,
+											"pattern": "^[a-zA-Z0-9, ]*$",
+											"example": "Left side near the big pillar",
+											"default": ""
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/channel/{channelId}": {
+			"get": {
+				"summary": "Get receiver channel information",
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"name": { "type": "string", "description": "User-settable channel name", "maxLength": 8 },
+										"mute": { "type": "boolean", "description": "Set audio output mute on/off of receiver channel" },
+										"mates": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Information about active mates of the receiver channel",
+												"enum": ["TX1", "TX2", "TX3", "TX4"]
+											},
+											"minItems": 1,
+											"maxItems": 1,
+											"readOnly": true
+										},
+										"gain": {
+											"type": "number",
+											"description": "Gain level for receiver channel. Valid values in range [-3dB..+42dB], increment step = 3dB",
+											"units": "dB",
+											"minimum": -3,
+											"maximum": 42,
+											"multipleOf": 3
+										},
+										"audio": {
+											"type": "array",
+											"items": {
+												"type": "string",
+												"description": "Information about active audio inputs/outputs of the receiver channel",
+												"enum": ["Out1", "Out2", "Out3", "Out4"]
+											},
+											"minItems": 1,
+											"maxItems": 1,
+											"readOnly": true
+										},
+										"outputLevel": {
+											"type": "number",
+											"description": "AF output level for receiver channel. Valid values in range [-24dB..+18dB], increment step = 6dB",
+											"units": "dB",
+											"minimum": -24,
+											"maximum": 18,
+											"multipleOf": 6
+										},
+										"eventCounter": {
+											"type": "integer",
+											"description": "Event counter for receiver channel sorting",
+											"readOnly": true
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			},
+			"put": {
+				"summary": "Update receiver channel information",
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"name": {
+										"type": "string",
+										"description": "User-settable channel name",
+										"maxLength": 8,
+										"pattern": "^[\\x20#*+,;\\x2D\\x2F<=|>0-9A-Z]*$"
+									},
+									"mute": { "type": "boolean", "description": "Set audio output mute on/off of receiver channel" },
+									"gain": {
+										"type": "number",
+										"description": "Gain level for receiver channel. Valid values in range [-3dB..+42dB], increment step = 3dB",
+										"units": "dB",
+										"minimum": -3,
+										"maximum": 42,
+										"multipleOf": 3
+									},
+									"outputLevel": {
+										"type": "number",
+										"description": "AF output level for receiver channel. Valid values in range [-24dB..+18dB], increment step = 6dB",
+										"units": "dB",
+										"minimum": -24,
+										"maximum": 18,
+										"multipleOf": 6
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful response" },
+					"400": { "description": "Bad request" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/warnings": {
+			"get": {
+				"summary": "Get receiver channel warnings",
+				"x-sennheiser-sscv2-resourcetype": ["FastResource"],
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"type": "string",
+										"description": "Active warnings on receiver channel",
+										"enum": ["Aes256Error", "LowSignal", "NoLink", "RfPeak", "AfPeak"]
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/identify": {
+			"get": {
+				"summary": "Get receiver channel identification visual status",
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"enabled": {
+											"type": "boolean",
+											"description": "Command to start/stop receiver channel identification"
+										}
+									},
+									"required": ["enabled"]
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			},
+			"put": {
+				"summary": "Set receiver channel identification visual",
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"enabled": {
+										"type": "boolean",
+										"description": "Command to start/stop receiver channel identification"
+									}
+								},
+								"required": ["enabled"]
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful response" },
+					"400": { "description": "Bad request" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"409": { "description": "Conflict. Payload not applicable due to device state" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/restore": {
+			"put": {
+				"summary": "Restore device audio default settings of receiver channel",
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"mode": {
+										"description": "Command to restore device audio default settings of receiver channel",
+										"type": "string",
+										"enum": ["AudioDefault"]
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful response" },
+					"400": { "description": "Bad request" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/channelSorting": {
+			"put": {
+				"summary": "Acknowledge receiver channel sorting",
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"requestBody": {
+					"required": true,
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"sorted": { "type": "boolean", "description": "Command to acknowledge receiver channel sorting" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful response" },
+					"400": { "description": "Bad request" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/signalStrengthIndicator": {
+			"get": {
+				"summary": "Get RF radio signal strength indicator (RSSI) for receiver channel",
+				"x-sennheiser-sscv2-resourcetype": ["FastResource"],
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"value": {
+											"type": "number",
+											"format": "double",
+											"description": "RF radio signal strength indicator (RSSI) for receiver channel",
+											"units": "dBm",
+											"minimum": -107,
+											"maximum": 0,
+											"readOnly": true
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/signalQualityIndicator": {
+			"get": {
+				"summary": "Get RF signal quality indicator (RSQI) for receiver channel",
+				"x-sennheiser-sscv2-resourcetype": ["FastResource"],
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"value": {
+											"type": "number",
+											"description": "RF signal quality indicator for receiver channel",
+											"units": "Percentage",
+											"minimum": 0,
+											"maximum": 100,
+											"readOnly": true
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/diversityIndicator": {
+			"get": {
+				"summary": "Get RF diversity indicator for receiver channel",
+				"x-sennheiser-sscv2-resourcetype": ["FastResource"],
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"value": {
+											"type": "number",
+											"description": "RF diversity indicator for receiver channel",
+											"minimum": 0,
+											"maximum": 2,
+											"readOnly": true,
+											"multipleOf": 1
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/channel/{channelId}/level": {
+			"get": {
+				"summary": "Get audio level for receiver channel",
+				"x-sennheiser-sscv2-resourcetype": ["FastResource"],
+				"tags": ["Interface_1_4"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful response",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"value": {
+											"type": "number",
+											"format": "double",
+											"description": "Audio level for receiver channel",
+											"units": "dBfs",
+											"minimum": -138.5,
+											"maximum": 0,
+											"readOnly": true
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" }
+				}
+			}
+		},
+		"/api/device/state": {
+			"get": {
+				"summary": "Get the device state",
+				"tags": ["Device", "Interface_1_2"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"state": {
+											"description": "Current overall state of the device. The device notifies the state as `Busy` in all circumstances where the device is not fully accessible via the SSC interface. This includes:\nThe device is starting and not all components are ready yet, the device is applying a long running operation (e.g. changing the network settings, setting the link density mode) or the device is powering off as a result of a restart or reset.\n",
+											"type": "string",
+											"default": "Normal",
+											"enum": ["Normal", "Identifying", "FirmwareUpdate", "Busy"]
+										},
+										"warnings": {
+											"description": "Current warnings of the device.",
+											"type": "array",
+											"default": [],
+											"items": { "type": "string" }
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/device/identity": {
+			"get": {
+				"tags": ["Device"],
+				"summary": "Get the device identity",
+				"security": [],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"product": {
+											"description": "The product type by which the device identifies itself (e.g. via mDNS).",
+											"type": "string",
+											"enum": ["EWDX2CHS", "EWDX2CHDS", "EWDX4CHDS"]
+										},
+										"hardwareRevision": {
+											"description": "The hardware Revision.",
+											"type": "string",
+											"example": "0596715-06"
+										},
+										"serial": { "type": "string", "example": "1023456789" },
+										"vendor": {
+											"type": "string",
+											"example": "Sennheiser electronic SE & Co. KG",
+											"enum": ["Sennheiser electronic SE & Co. KG"]
+										}
+									}
+								}
+							}
+						}
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/rf": {
+			"get": {
+				"summary": "Get the radio frequency settings",
+				"description": "An SSCv2 Command to retrieve the current radio frequency settings.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"code": {
+											"description": "Country specific radio frequency code. Used as additional product variant indicator and as an identifer for radio frequency ranges.",
+											"type": "string",
+											"readOnly": true,
+											"enum": ["Q1-9", "R1-9", "S1-10", "S2-10", "S4-10", "U1/5", "V3-4", "V5-7", "Y1-3"]
+										},
+										"ranges": {
+											"description": "Specific radio frequency ranges of the device. Depending on the radio frequency country code the device can have gaps which are exposed as multiple range entries.",
+											"type": "array",
+											"example": [{ "start": 470200, "end": 550000, "stepsize": 25 }],
+											"readOnly": true,
+											"items": {
+												"type": "object",
+												"properties": {
+													"start": {
+														"description": "Start radio frequency in kHz",
+														"type": "integer",
+														"format": "int64",
+														"units": "kHz"
+													},
+													"end": {
+														"description": "End radio frequency in kHz",
+														"type": "integer",
+														"format": "int64",
+														"units": "kHz"
+													},
+													"stepSize": {
+														"description": "Step size in kHz",
+														"type": "integer",
+														"format": "int64",
+														"units": "kHz",
+														"minimum": 25,
+														"maximum": 1000,
+														"multipleOf": 25,
+														"default": 25
+													}
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/rf/transmission": {
+			"get": {
+				"summary": "Get the transmission mode.",
+				"description": "An SSCv2 Command to retrieve the current transmission mode.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"mode": {
+											"description": "Link Density mode doubles the number of possible channels. This is usefull in a very difficult, congested frequency spectrum.",
+											"type": "string",
+											"enum": ["LinkDensity", "Standard"],
+											"default": "Standard"
+										},
+										"presetSpacing": {
+											"description": "Preset spacing in kHz depending on if Link Density transmission mode is active or not.",
+											"type": "integer",
+											"format": "int64",
+											"units": "kHz",
+											"minimum": 25,
+											"maximum": 625,
+											"multipleOf": 25,
+											"readOnly": true,
+											"default": 25
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			},
+			"put": {
+				"summary": "Change the transmission mode.",
+				"description": "An SSCv2 Command to change the current transmission mode.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"mode": {
+										"description": "Link Density mode doubles the number of possible channels. This is usefull in a very difficult, congested frequency spectrum.",
+										"type": "string",
+										"enum": ["LinkDensity", "Standard"],
+										"default": "Standard"
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/rf/encryption": {
+			"get": {
+				"summary": "Get the radio frequency encryption state.",
+				"description": "An SSCv2 Command to retrieve the current radio frequency encryption state.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": { "type": "object", "properties": { "enabled": { "type": "boolean", "default": false } } }
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			},
+			"put": {
+				"summary": "Change the radio frequency encryption state.",
+				"description": "An SSCv2 Command to change the current radio frequency encryption state.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": { "type": "object", "properties": { "enabled": { "type": "boolean", "default": false } } }
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/rf/channels/{channelId}": {
+			"get": {
+				"summary": "Get the radio frequency",
+				"description": "An SSCv2 Command to retrieve the current radio frequency.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"frequency": {
+											"description": "Radio frequency in kHz",
+											"type": "integer",
+											"format": "int64",
+											"units": "kHz"
+										},
+										"presets": {
+											"description": "Currently active preset bank and channel",
+											"type": "object",
+											"properties": {
+												"type": {
+													"description": "Currently active preset type",
+													"type": "string",
+													"enum": ["Factory", "User", "None"]
+												},
+												"bank": {
+													"description": "Currently active preset bank. Would not be notified if type is 'None', thus won't be part of the json structure",
+													"type": "integer",
+													"format": "int64",
+													"minimum": 0,
+													"maximum": 0
+												},
+												"channel": {
+													"description": "Currently active preset channel. Would not be notified if type is 'None', thus won't be part of the json structure",
+													"type": "integer",
+													"format": "int64"
+												}
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/rf/channels/{channelId}/frequency": {
+			"put": {
+				"summary": "Change the radio frequency",
+				"description": "An SSCv2 Command to change the radio frequency.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"frequency": {
+										"description": "Radio frequency in kHz",
+										"type": "integer",
+										"format": "int64",
+										"units": "kHz",
+										"multipleOf": 25
+									}
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/rf/channels/{channelId}/preset": {
+			"put": {
+				"summary": "Change the radio frequency",
+				"description": "An SSCv2 Command to change the radio frequency.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"in": "path",
+						"name": "channelId",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"type": {
+										"description": "Currently active preset type",
+										"type": "string",
+										"enum": ["Factory", "User"]
+									},
+									"bank": {
+										"description": "Currently active preset bank",
+										"type": "integer",
+										"format": "int64",
+										"minimum": 0,
+										"maximum": 0,
+										"multipleOf": 1,
+										"example": 0
+									},
+									"channel": { "description": "Currently active preset channel", "type": "integer", "format": "int64" }
+								}
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/rf/presets/user/channels/{channelId}/banks": {
+			"get": {
+				"summary": "Get a list of channel specific bank ids for user defined frequency presets.",
+				"description": "An SSCv2 Command to retrieve a list of channel specific bank ids for user defined frequency presets.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"description": "user defined Frequency bank",
+									"items": {
+										"type": "integer",
+										"format": "int64",
+										"minimum": 0,
+										"maximum": 0,
+										"default": 0,
+										"example": 0
+									},
+									"minItems": 1,
+									"maxItems": 1
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/rf/presets/user/channels/{channelId}/banks/{bankId}": {
+			"get": {
+				"summary": "Get a channel specific bank of user defined frequency presets.",
+				"description": "An SSCv2 Command to retrieve a channel specific bank of user defined frequency presets.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					},
+					{
+						"name": "bankId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 0, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"description": "user defined Frequency bank",
+									"items": { "type": "integer", "format": "int64", "units": "kHz" },
+									"minItems": 1,
+									"maxItems": 100
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			},
+			"put": {
+				"summary": "Change the channel specific bank of user defined frequency presets.",
+				"description": "An SSCv2 Command to change the channel specific bank of user defined frequency presets.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					},
+					{
+						"name": "bankId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 0, "example": 0 }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "array",
+								"description": "user defined Frequency bank",
+								"items": { "type": "integer", "format": "int64", "units": "kHz" },
+								"minItems": 1,
+								"maxItems": 100
+							}
+						}
+					}
+				},
+				"responses": {
+					"200": { "description": "Successful operation" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "Internal server error" }
+				}
+			}
+		},
+		"/api/rf/presets/factory/banks/{bankId}": {
+			"get": {
+				"summary": "Get a default factory bank of frequency presets.",
+				"description": "An SSCv2 Command to retrieve a default factory bank of frequency presets.",
+				"tags": ["RadioFrequency", "Interface_1_3"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "bankId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 0, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"description": "default factory defined Frequency bank",
+									"items": { "type": "integer", "format": "int64", "units": "kHz" }
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/ssc/legacyMode": {
+			"get": {
+				"summary": "Get the state of unsecure SSCv1 legacy third party support",
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"tags": ["Interface_1_0"],
+				"responses": {
+					"200": {
+						"description": "Successful operation",
+						"content": {
+							"application/json": {
+								"schema": { "type": "object", "properties": { "enabled": { "type": "boolean", "default": false } } }
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/syncSettings/{channelId}": {
+			"get": {
+				"summary": "Get all the channel specific transmitter sync settings",
+				"tags": ["SyncSettings", "Interface_1_6"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "All transmitter sync settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"muteConfig": { "type": "string", "enum": ["Off", "RfMute", "AfMute"] },
+										"cableEmulation": { "type": "string", "enum": ["Off", "Type1", "Type2", "Type3"] },
+										"lowcut": { "type": "string", "enum": ["Off", "30Hz", "60Hz", "80Hz", "100Hz", "120Hz"] },
+										"lock": { "type": "boolean" },
+										"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+										"led": { "type": "boolean" },
+										"muteConfigTs": { "type": "string", "enum": ["AfMute", "Off", "PTT", "PTM"] }
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			},
+			"put": {
+				"summary": "Set all the channel specific transmitter sync settings",
+				"tags": ["SyncSettings", "Interface_1_6"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"muteConfig": { "type": "string", "enum": ["Off", "RfMute", "AfMute"] },
+									"cableEmulation": { "type": "string", "enum": ["Off", "Type1", "Type2", "Type3"] },
+									"lowcut": { "type": "string", "enum": ["Off", "30Hz", "60Hz", "80Hz", "100Hz", "120Hz"] },
+									"lock": { "type": "boolean" },
+									"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+									"led": { "type": "boolean" },
+									"muteConfigTs": { "type": "string", "enum": ["AfMute", "Off", "PTT", "PTM"] }
+								}
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": { "description": "All transmitter sync settings successfully updated" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/syncSettings/{channelId}/ignore": {
+			"get": {
+				"summary": "Get the channel specific ignored state of all transmitter sync settings",
+				"tags": ["SyncSettings", "Interface_1_6"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "Ignored state of all transmitter sync settings",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"muteConfig": { "type": "boolean" },
+										"cableEmulation": { "type": "boolean" },
+										"lowcut": { "type": "boolean" },
+										"lock": { "type": "boolean" },
+										"trim": { "type": "boolean" },
+										"led": { "type": "boolean" },
+										"name": { "type": "boolean" },
+										"frequency": { "type": "boolean" }
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			},
+			"put": {
+				"summary": "Set the ignored state of all channel specific sync settings",
+				"tags": ["SyncSettings", "Interface_1_6"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "channelId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"requestBody": {
+					"content": {
+						"application/json": {
+							"schema": {
+								"type": "object",
+								"properties": {
+									"muteConfig": { "type": "boolean" },
+									"cableEmulation": { "type": "boolean" },
+									"lowcut": { "type": "boolean" },
+									"lock": { "type": "boolean" },
+									"trim": { "type": "boolean" },
+									"led": { "type": "boolean" },
+									"name": { "type": "boolean" },
+									"frequency": { "type": "boolean" }
+								}
+							}
+						}
+					},
+					"required": true
+				},
+				"responses": {
+					"200": { "description": "All ignored states for channel specific sync settings successfully updated" },
+					"400": { "description": "Bad request since the format is not correct (e.g., wrong JSON payload)" },
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the ``initialSennheiser`` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/transmitters": {
+			"get": {
+				"x-sennheiser-sscv2-resourcetype": ["ControlResource"],
+				"x-sennheiser-sscv2-subresource": "/api/transmitters/{transmitterId}",
+				"summary": "Get a list of all receiver channel indexes linked to a transmitter",
+				"tags": ["Transmitter", "Interface_1_5"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"responses": {
+					"200": {
+						"description": "A list of all receiver channel indexes linked to a transmitter",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "array",
+									"items": {
+										"type": "object",
+										"properties": {
+											"id": { "type": "integer" },
+											"transmitter": {
+												"oneOf": [
+													{
+														"type": "object",
+														"properties": {
+															"type": { "type": "string", "enum": ["EW_D_SKP", "EW_D_SK", "EW_D_SKM_S"] },
+															"capsule": {
+																"type": "string",
+																"enum": [
+																	"Unknown",
+																	"KK_205",
+																	"KK_204",
+																	"ME_9002",
+																	"ME_9004",
+																	"ME_9005",
+																	"MME_865",
+																	"MD_9235",
+																	"MM_435",
+																	"MM_445",
+																	"MMD_945",
+																	"MMD_935",
+																	"MMD_845",
+																	"MMD_835",
+																	"MMD_815_1",
+																	"MMK_965",
+																	"MMD_42_I",
+																	"None"
+																]
+															},
+															"version": { "type": "string" },
+															"mute": { "type": "boolean" },
+															"identification": { "type": "boolean" }
+														}
+													},
+													{
+														"type": "object",
+														"properties": {
+															"type": { "type": "string", "enum": ["EW_DX_SK", "EW_DX_SK_3_PIN"] },
+															"lowcut": { "type": "string", "enum": ["Off", "30Hz", "60Hz", "80Hz", "100Hz", "120Hz"] },
+															"capsule": { "type": "string", "enum": ["Unknown", "None"] },
+															"name": { "type": "string" },
+															"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+															"cableEmulation": { "type": "string", "enum": ["Off", "Type1", "Type2", "Type3"] },
+															"led": { "type": "boolean" },
+															"version": { "type": "string" },
+															"lock": { "type": "boolean" },
+															"mute": { "type": "boolean" },
+															"identification": { "type": "boolean" },
+															"muteConfig": { "type": "string", "enum": ["Off", "RfMute", "AfMute"] }
+														}
+													},
+													{
+														"type": "object",
+														"properties": {
+															"type": { "type": "string", "enum": ["EW_DX_SKM"] },
+															"lowcut": { "type": "string", "enum": ["60Hz", "80Hz", "100Hz", "120Hz"] },
+															"capsule": {
+																"type": "string",
+																"enum": [
+																	"Unknown",
+																	"KK_205",
+																	"KK_204",
+																	"ME_9002",
+																	"ME_9004",
+																	"ME_9005",
+																	"MME_865",
+																	"MD_9235",
+																	"MM_435",
+																	"MM_445",
+																	"MMD_945",
+																	"MMD_935",
+																	"MMD_845",
+																	"MMD_835",
+																	"MMD_815_1",
+																	"MMK_965",
+																	"MMD_42_I",
+																	"None"
+																]
+															},
+															"name": { "type": "string" },
+															"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+															"led": { "type": "boolean" },
+															"version": { "type": "string" },
+															"lock": { "type": "boolean" },
+															"mute": { "type": "boolean" },
+															"identification": { "type": "boolean" }
+														}
+													},
+													{
+														"type": "object",
+														"properties": {
+															"type": { "type": "string", "enum": ["EW_DX_SKM_S"] },
+															"lowcut": { "type": "string", "enum": ["60Hz", "80Hz", "100Hz", "120Hz"] },
+															"capsule": {
+																"type": "string",
+																"enum": [
+																	"Unknown",
+																	"KK_205",
+																	"KK_204",
+																	"ME_9002",
+																	"ME_9004",
+																	"ME_9005",
+																	"MME_865",
+																	"MD_9235",
+																	"MM_435",
+																	"MM_445",
+																	"MMD_945",
+																	"MMD_935",
+																	"MMD_845",
+																	"MMD_835",
+																	"MMD_815_1",
+																	"MMK_965",
+																	"MMD_42_I",
+																	"None"
+																]
+															},
+															"name": { "type": "string" },
+															"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+															"led": { "type": "boolean" },
+															"version": { "type": "string" },
+															"lock": { "type": "boolean" },
+															"mute": { "type": "boolean" },
+															"identification": { "type": "boolean" },
+															"muteConfig": { "type": "string", "enum": ["Off", "RfMute", "AfMute"] }
+														}
+													},
+													{
+														"type": "object",
+														"properties": {
+															"type": { "type": "string", "enum": ["EW_DX_TS_3_PIN", "EW_DX_TS_5_PIN"] },
+															"lowcut": { "type": "string", "enum": ["60Hz", "80Hz", "100Hz", "120Hz"] },
+															"capsule": { "type": "string", "enum": ["Unknown"] },
+															"name": { "type": "string" },
+															"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+															"cableEmulation": { "type": "string", "enum": ["Off"] },
+															"led": { "type": "boolean" },
+															"version": { "type": "string" },
+															"lock": { "type": "boolean" },
+															"mute": { "type": "boolean" },
+															"identification": { "type": "boolean" },
+															"muteConfigTableStand": {
+																"type": "string",
+																"enum": ["AfMute", "Off", "PushToTalk", "PushToMute"]
+															}
+														}
+													}
+												]
+											}
+										}
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the `initialSennheiser` user)"
+					},
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/transmitters/{transmitterId}/battery": {
+			"get": {
+				"summary": "Read the transmitter battery properties",
+				"tags": ["Transmitter", "Interface_1_5"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "transmitterId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "A list of transmitter battery properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"type": "object",
+									"properties": {
+										"type": { "type": "string", "enum": ["Battery", "PrimaryCell", "NoBattery"] },
+										"lifetime": { "type": "number", "description": "Lifetime in minutes" },
+										"gauge": { "type": "number", "description": "Level in percentage" }
+									}
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the `initialSennheiser` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"422": { "description": "Unprocessable entity. Missing property values as no Transmitter is linked" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/transmitters/{transmitterId}": {
+			"get": {
+				"summary": "Read the transmitter properties",
+				"tags": ["Transmitter", "Interface_1_5"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "transmitterId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "A list of transmitter properties",
+						"content": {
+							"application/json": {
+								"schema": {
+									"oneOf": [
+										{
+											"type": "object",
+											"properties": {
+												"type": { "type": "string", "enum": ["EW_D_SKP", "EW_D_SK", "EW_D_SKM_S"] },
+												"capsule": {
+													"type": "string",
+													"enum": [
+														"Unknown",
+														"KK_205",
+														"KK_204",
+														"ME_9002",
+														"ME_9004",
+														"ME_9005",
+														"MME_865",
+														"MD_9235",
+														"MM_435",
+														"MM_445",
+														"MMD_945",
+														"MMD_935",
+														"MMD_845",
+														"MMD_835",
+														"MMD_815_1",
+														"MMK_965",
+														"MMD_42_I",
+														"None"
+													]
+												},
+												"version": { "type": "string" },
+												"mute": { "type": "boolean" },
+												"identification": { "type": "boolean" }
+											}
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": { "type": "string", "enum": ["EW_DX_SK", "EW_DX_SK_3_PIN"] },
+												"lowcut": { "type": "string", "enum": ["Off", "30Hz", "60Hz", "80Hz", "100Hz", "120Hz"] },
+												"capsule": { "type": "string", "enum": ["Unknown", "None"] },
+												"name": { "type": "string" },
+												"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+												"cableEmulation": { "type": "string", "enum": ["Off", "Type1", "Type2", "Type3"] },
+												"led": { "type": "boolean" },
+												"version": { "type": "string" },
+												"lock": { "type": "boolean" },
+												"mute": { "type": "boolean" },
+												"identification": { "type": "boolean" },
+												"muteConfig": { "type": "string", "enum": ["Off", "RfMute", "AfMute"] }
+											}
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": { "type": "string", "enum": ["EW_DX_SKM"] },
+												"lowcut": { "type": "string", "enum": ["60Hz", "80Hz", "100Hz", "120Hz"] },
+												"capsule": {
+													"type": "string",
+													"enum": [
+														"Unknown",
+														"KK_205",
+														"KK_204",
+														"ME_9002",
+														"ME_9004",
+														"ME_9005",
+														"MME_865",
+														"MD_9235",
+														"MM_435",
+														"MM_445",
+														"MMD_945",
+														"MMD_935",
+														"MMD_845",
+														"MMD_835",
+														"MMD_815_1",
+														"MMK_965",
+														"MMD_42_I",
+														"None"
+													]
+												},
+												"name": { "type": "string" },
+												"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+												"led": { "type": "boolean" },
+												"version": { "type": "string" },
+												"lock": { "type": "boolean" },
+												"mute": { "type": "boolean" },
+												"identification": { "type": "boolean" }
+											}
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": { "type": "string", "enum": ["EW_DX_SKM_S"] },
+												"lowcut": { "type": "string", "enum": ["60Hz", "80Hz", "100Hz", "120Hz"] },
+												"capsule": {
+													"type": "string",
+													"enum": [
+														"Unknown",
+														"KK_205",
+														"KK_204",
+														"ME_9002",
+														"ME_9004",
+														"ME_9005",
+														"MME_865",
+														"MD_9235",
+														"MM_435",
+														"MM_445",
+														"MMD_945",
+														"MMD_935",
+														"MMD_845",
+														"MMD_835",
+														"MMD_815_1",
+														"MMK_965",
+														"MMD_42_I",
+														"None"
+													]
+												},
+												"name": { "type": "string" },
+												"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+												"led": { "type": "boolean" },
+												"version": { "type": "string" },
+												"lock": { "type": "boolean" },
+												"mute": { "type": "boolean" },
+												"identification": { "type": "boolean" },
+												"muteConfig": { "type": "string", "enum": ["Off", "RfMute", "AfMute"] }
+											}
+										},
+										{
+											"type": "object",
+											"properties": {
+												"type": { "type": "string", "enum": ["EW_DX_TS_3_PIN", "EW_DX_TS_5_PIN"] },
+												"lowcut": { "type": "string", "enum": ["60Hz", "80Hz", "100Hz", "120Hz"] },
+												"capsule": { "type": "string", "enum": ["Unknown"] },
+												"name": { "type": "string" },
+												"trim": { "type": "number", "minimum": -12, "maximum": 6 },
+												"cableEmulation": { "type": "string", "enum": ["Off"] },
+												"led": { "type": "boolean" },
+												"version": { "type": "string" },
+												"lock": { "type": "boolean" },
+												"mute": { "type": "boolean" },
+												"identification": { "type": "boolean" },
+												"muteConfigTableStand": {
+													"type": "string",
+													"enum": ["AfMute", "Off", "PushToTalk", "PushToMute"]
+												}
+											}
+										}
+									]
+								}
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the `initialSennheiser` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"422": { "description": "Unprocessable entity. Missing property values as no Transmitter is linked" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		},
+		"/api/transmitters/{transmitterId}/warnings": {
+			"get": {
+				"summary": "Read the transmitter warnings",
+				"x-sennheiser-sscv2-resourcetype": ["FastResource"],
+				"tags": ["Transmitter", "Interface_1_5"],
+				"security": [{ "basicAuthControlSennheiser": [] }, { "basicAuthApi": [] }],
+				"parameters": [
+					{
+						"name": "transmitterId",
+						"in": "path",
+						"required": true,
+						"schema": { "type": "integer", "minimum": 0, "maximum": 3, "multipleOf": 1, "example": 0 }
+					}
+				],
+				"responses": {
+					"200": {
+						"description": "A list of transmitter warnings",
+						"content": {
+							"application/json": {
+								"schema": { "type": "array", "items": { "type": "string", "enum": ["LowBattery", "AfPeak"] } }
+							}
+						}
+					},
+					"401": { "description": "Unauthorized since no user credentials are passed" },
+					"403": {
+						"description": "Forbidden since the authenticated user is not allowed to access this resource (e.g., this route is not allowed for the `initialSennheiser` user)"
+					},
+					"404": { "description": "Not found since the resource is not existing (e.g., the URL contains a wrong ID)" },
+					"422": { "description": "Unprocessable entity. Missing property values as no Transmitter is linked" },
+					"500": { "description": "SSCv2 Server encountered an internal error" }
+				}
+			}
+		}
+	}
+}

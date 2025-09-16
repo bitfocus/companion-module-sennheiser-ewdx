@@ -1,6 +1,7 @@
 import type { ModuleInstance } from './main.js'
 import { graphics } from 'companion-module-utils'
 import { DantePortMapping, MuteOptions, MuteOptionsTable, SyncSettings, EWDXReceiver } from './ewdxReceiver.js'
+import { EWDXReceiverSCPv2 } from './ewdxReceiverSCPv2.js'
 import { images } from './graphics.js'
 
 import { DeviceModel } from './ewdx.js'
@@ -14,6 +15,11 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			id: i,
 			label: `Channel ${i + 1}`,
 		}))
+	}
+
+	// Helper function to check if device is a receiver (SCPv1 or SCPv2)
+	function isReceiver(device: any): device is EWDXReceiver | EWDXReceiverSCPv2 {
+		return device instanceof EWDXReceiver || device instanceof EWDXReceiverSCPv2
 	}
 
 	const feedbacks: CompanionFeedbackDefinitions = {}
@@ -31,8 +37,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 		},
 	}
 
-	if (self.device instanceof EWDXReceiver) {
-		const receiver: EWDXReceiver = self.device
+	if (isReceiver(self.device)) {
+		const receiver: EWDXReceiver | EWDXReceiverSCPv2 = self.device
 		feedbacks.ActiveAntenna = {
 			name: 'Active Antenna',
 			description:
@@ -204,11 +210,11 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const setting = Number(feedback.options.setting)
 				switch (setting as MuteOptions) {
 					case MuteOptions.off:
-						return receiver.channels[channel].mate.muteConfig == MuteOptions.off
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptions.off)
 					case MuteOptions.af_mute:
-						return receiver.channels[channel].mate.muteConfig == MuteOptions.af_mute
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptions.af_mute)
 					case MuteOptions.rf_mute:
-						return receiver.channels[channel].mate.muteConfig == MuteOptions.rf_mute
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptions.rf_mute)
 				}
 			},
 		}
@@ -244,13 +250,13 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const setting = Number(feedback.options.setting)
 				switch (setting as MuteOptionsTable) {
 					case MuteOptionsTable.off:
-						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.off
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptionsTable.off)
 					case MuteOptionsTable.af_mute:
-						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.af_mute
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptionsTable.af_mute)
 					case MuteOptionsTable.push_to_talk:
-						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_talk
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptionsTable.push_to_talk)
 					case MuteOptionsTable.push_to_mute:
-						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_mute
+						return receiver.channels[channel].mate.muteConfig === Number(MuteOptionsTable.push_to_mute)
 				}
 			},
 		}
@@ -640,7 +646,11 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					callback: (feedback) => {
 						const mapping = feedback.options.mapping as DantePortMapping
 
-						return receiver.danteInterfaceMapping === mapping
+						// Only SCPv1 has danteInterfaceMapping
+						if (receiver instanceof EWDXReceiver) {
+							return receiver.danteInterfaceMapping === mapping
+						}
+						return false
 					},
 				}
 			}

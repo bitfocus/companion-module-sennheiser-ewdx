@@ -9,6 +9,7 @@ import {
 	SyncSettings,
 	EWDXReceiver,
 } from './ewdxReceiver.js'
+import { EWDXReceiverSCPv2 } from './ewdxReceiverSCPv2.js'
 import { DeviceModel } from './ewdx.js'
 import { CHG70N } from './chg70n.js'
 
@@ -19,6 +20,23 @@ export function UpdateActions(self: ModuleInstance): void {
 			id: i,
 			label: `Channel ${i + 1}`,
 		}))
+	}
+
+	// Helper function to check if device is a receiver (SCPv1 or SCPv2)
+	function isReceiver(device: any): device is EWDXReceiver | EWDXReceiverSCPv2 {
+		return device instanceof EWDXReceiver || device instanceof EWDXReceiverSCPv2
+	}
+
+	// Helper function to handle async/sync method calls
+	async function safeCall(methodCall: any): Promise<void> {
+		try {
+			const result = methodCall
+			if (result && typeof result.then === 'function') {
+				await result
+			}
+		} catch (error) {
+			console.error('Action call failed:', error)
+		}
 	}
 
 	const actions: CompanionActionDefinitions = {}
@@ -112,8 +130,8 @@ export function UpdateActions(self: ModuleInstance): void {
 		},
 	}
 
-	if (self.device instanceof EWDXReceiver) {
-		const receiver: EWDXReceiver = self.device
+	if (isReceiver(self.device)) {
+		const receiver: EWDXReceiver | EWDXReceiverSCPv2 = self.device
 		actions.brightness = {
 			name: 'Device: Set Brightness',
 			options: [
@@ -158,7 +176,11 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const lock = Boolean(action.options.lock)
-				receiver.setAutoLock(lock)
+				if (receiver instanceof EWDXReceiver) {
+					receiver.setAutoLock(lock)
+				} else if (receiver instanceof EWDXReceiverSCPv2) {
+					await receiver.setAutoLockAllChannels(lock)
+				}
 			},
 		}
 		actions.encryption = {
@@ -173,7 +195,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const encryption = Boolean(action.options.encryption)
-				receiver.setEncryption(encryption)
+				await safeCall(receiver.setEncryption(encryption))
 			},
 		}
 
@@ -189,7 +211,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const linkdensity = Boolean(action.options.linkdensity)
-				receiver.setLinkDensityMode(linkdensity)
+				await safeCall(receiver.setLinkDensityMode(linkdensity))
 			},
 		}
 		actions.rx_mute = {
@@ -219,13 +241,13 @@ export function UpdateActions(self: ModuleInstance): void {
 				const mute = String(action.options.mute)
 				switch (mute) {
 					case 'mute':
-						receiver.channels[channel].setMuteState(true)
+						await safeCall(receiver.channels[channel].setMuteState(true))
 						break
 					case 'unmute':
-						receiver.channels[channel].setMuteState(false)
+						await safeCall(receiver.channels[channel].setMuteState(false))
 						break
 					case 'toggle':
-						receiver.channels[channel].toggleMuteState()
+						await safeCall(receiver.channels[channel].toggleMuteState())
 						break
 				}
 			},
@@ -255,7 +277,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				receiver.channels[channel].setMuteConfigSK(muteSetting as MuteOptions)
+				await safeCall(receiver.channels[channel].setMuteConfigSK(muteSetting as MuteOptions))
 			},
 		}
 		actions.rx_ss_mute_config_table = {
@@ -284,7 +306,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				receiver.channels[channel].setMuteConfigTable(muteSetting as MuteOptionsTable)
+				await safeCall(receiver.channels[channel].setMuteConfigTable(muteSetting as MuteOptionsTable))
 			},
 		}
 		actions.rx_ss_ignore = {
@@ -324,7 +346,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
 				const ignore = Boolean(action.options.ignore)
-				receiver.channels[channel].setSyncIgnore(setting as SyncSettings, ignore)
+				await safeCall(receiver.channels[channel].setSyncIgnore(setting as SyncSettings, ignore))
 			},
 		}
 		actions.rx_ss_lowcut = {
@@ -353,7 +375,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const lowcut = Number(action.options.lowcut)
-				receiver.channels[channel].setLowcut(lowcut as LowcutOptions)
+				await safeCall(receiver.channels[channel].setLowcut(lowcut as LowcutOptions))
 			},
 		}
 		actions.rx_ss_lock = {
@@ -376,7 +398,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const lock = Boolean(action.options.lock)
-				receiver.channels[channel].setAutoLock(lock)
+				await safeCall(receiver.channels[channel].setAutoLock(lock))
 			},
 		}
 		actions.rx_ss_trim = {
@@ -401,7 +423,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const trim = Number(action.options.trim)
-				receiver.channels[channel].setTrim(trim)
+				await safeCall(receiver.channels[channel].setTrim(trim))
 			},
 		}
 		actions.rx_ss_tx_led = {
@@ -424,7 +446,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const enabled = Boolean(action.options.enabled)
-				receiver.channels[channel].setTXLED(enabled)
+				await safeCall(receiver.channels[channel].setTXLED(enabled))
 			},
 		}
 		actions.rx_ss_cable_emulation = {
@@ -453,7 +475,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
-				receiver.channels[channel].setCableEmulation(setting as CableEmulationOptions)
+				await safeCall(receiver.channels[channel].setCableEmulation(setting as CableEmulationOptions))
 			},
 		}
 		actions.rx_name = {
@@ -478,7 +500,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const name = String(action.options.name)
 				const parsedName = await self.parseVariablesInString(name)
-				receiver.channels[channel].setName(parsedName)
+				await safeCall(receiver.channels[channel].setName(parsedName))
 			},
 		}
 		actions.rx_gain = {
@@ -505,7 +527,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const gain = Number(action.options.gain)
-				receiver.channels[channel].setGain(gain)
+				await safeCall(receiver.channels[channel].setGain(gain))
 			},
 		}
 		actions.rx_gain_relative = {
@@ -555,7 +577,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				}
 
 				const newGain = availableGains[index]
-				receiver.channels[channel].setGain(newGain)
+				await safeCall(receiver.channels[channel].setGain(newGain))
 			},
 		}
 		actions.rx_freq = {
@@ -580,7 +602,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const freq = Number(action.options.frequency)
-				receiver.channels[channel].setFrequency(freq)
+				await safeCall(receiver.channels[channel].setFrequency(freq))
 			},
 		}
 		actions.rx_identification = {
@@ -603,12 +625,15 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const ident = Boolean(action.options.ident)
-				receiver.channels[channel].setIdentification(ident)
+				await safeCall(receiver.channels[channel].setIdentification(ident))
 			},
 		}
 
-		if (self.device instanceof EWDXReceiver) {
-			if (self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) {
+		if (isReceiver(self.device)) {
+			if (
+				(self.device.model === DeviceModel.EM4 || self.device.model === DeviceModel.EM2_DANTE) &&
+				self.device instanceof EWDXReceiver
+			) {
 				const receiver: EWDXReceiver = self.device
 				actions.dante_network_settings = {
 					name: 'Dante: Change Network Settings',

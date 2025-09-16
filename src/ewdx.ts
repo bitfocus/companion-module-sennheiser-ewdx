@@ -49,8 +49,11 @@ export class NetworkInterface {
 	}
 }
 
-export abstract class EWDX {
-	private socket: SharedUdpSocket
+/**
+ * Base class for EW-DX devices containing shared properties and methods
+ * This class doesn't include any protocol-specific implementation (UDP/HTTPS)
+ */
+export abstract class EWDXBase {
 	model: DeviceModel
 	context: ModuleInstance
 	host: string
@@ -62,7 +65,6 @@ export abstract class EWDX {
 	mdns: boolean
 
 	deviceConnected: boolean
-	private responseTimeout?: NodeJS.Timeout
 
 	constructor(context: ModuleInstance, model: DeviceModel, host: string) {
 		this.context = context
@@ -74,6 +76,58 @@ export abstract class EWDX {
 		this.networkInterface = new NetworkInterface()
 		this.mdns = false
 		this.deviceConnected = false
+	}
+
+	// Abstract methods that must be implemented by protocol-specific classes
+	abstract connect(): Promise<void> | void
+	abstract destroy(): void
+	abstract initSubscriptions(): void
+	abstract publishVariableValues(): void
+	abstract getStaticInformation(): void
+	abstract parseMessage(json: Record<string, unknown>): void
+	abstract resetAllValues(): void
+
+	// Common methods that can be shared (but may be overridden)
+	restart(): void {
+		// Override in protocol-specific implementations
+		throw new Error('restart() must be implemented by subclass')
+	}
+
+	setName(_name: string): void {
+		// Override in protocol-specific implementations
+		throw new Error('setName() must be implemented by subclass')
+	}
+
+	getName(): void {
+		// Override in protocol-specific implementations
+		throw new Error('getName() must be implemented by subclass')
+	}
+
+	setLocation(_location: string): void {
+		// Override in protocol-specific implementations
+		throw new Error('setLocation() must be implemented by subclass')
+	}
+
+	setIdentification(_identification: boolean): void {
+		// Override in protocol-specific implementations
+		throw new Error('setIdentification() must be implemented by subclass')
+	}
+
+	setNetworkSettings(_dhcp: boolean, _mdns: boolean, _ip: string, _netmask: string, _gateway: string): void {
+		// Override in protocol-specific implementations
+		throw new Error('setNetworkSettings() must be implemented by subclass')
+	}
+}
+
+/**
+ * SCPv1 (UDP-based) implementation for EW-DX devices with firmware < 4.0.0
+ */
+export abstract class EWDX extends EWDXBase {
+	private socket: SharedUdpSocket
+	private responseTimeout?: NodeJS.Timeout
+
+	constructor(context: ModuleInstance, model: DeviceModel, host: string) {
+		super(context, model, host)
 
 		this.socket = context.createSharedUdpSocket('udp4', (msg, rinfo) => this.checkMessage(msg, rinfo))
 
@@ -100,7 +154,7 @@ export abstract class EWDX {
 		if (rinfo.address == this.host && rinfo.port == udpPort) {
 			const message = Buffer.from(raw).toString()
 			console.log(message)
-			const json: JSON = JSON.parse(message)
+			const json = JSON.parse(message) as Record<string, unknown>
 			if (json) {
 				this.parseMessage(json)
 			} else {
@@ -123,7 +177,7 @@ export abstract class EWDX {
 		const cmd = oscToJson(path, value)
 		const message = JSON.stringify(cmd)
 		this.sendMessage(message)
-		this.context.log('debug', `Sending command: ${message}`)
+		console.log('debug', `Sending command: ${message}`)
 	}
 
 	public sendMessage(message: string): void {
@@ -156,27 +210,28 @@ export abstract class EWDX {
 		})
 	}
 
-	restart(): void {
+	// Override base class methods with UDP/SCPv1 implementations
+	override restart(): void {
 		this.sendCommand('/device/restart', true)
 	}
 
-	setName(name: string): void {
+	override setName(name: string): void {
 		this.sendCommand('/device/name', name)
 	}
 
-	getName(): void {
+	override getName(): void {
 		this.sendCommand('/device/name', null)
 	}
 
-	setLocation(location: string): void {
+	override setLocation(location: string): void {
 		this.sendCommand('/device/location', location)
 	}
 
-	setIdentification(identification: boolean): void {
+	override setIdentification(identification: boolean): void {
 		this.sendCommand('/device/identification/visual', identification)
 	}
 
-	setNetworkSettings(dhcp: boolean, mdns: boolean, ip: string, netmask: string, gateway: string): void {
+	override setNetworkSettings(dhcp: boolean, mdns: boolean, ip: string, netmask: string, gateway: string): void {
 		this.sendCommand('/device/network/ipv4/auto', dhcp)
 		this.sendCommand('/device/network/mdns', mdns)
 		if (ip != '' && ip != null) this.sendCommand('/device/network/ipv4/manual_ipaddr', ip)
@@ -184,12 +239,13 @@ export abstract class EWDX {
 		if (gateway != '' && gateway != null) this.sendCommand('/device/network/ipv4/manual_gateway', gateway)
 	}
 
+	// Abstract methods that must be implemented by EWDXReceiver
 	abstract initSubscriptions(): void
 	abstract publishVariableValues(): void
 	abstract getStaticInformation(): void
-	// eslint-disable-next-line @typescript-eslint/explicit-module-boundary-types
-	abstract parseMessage(json: any): void
+	abstract parseMessage(json: Record<string, unknown>): void
 	abstract resetAllValues(): void
+	abstract destroy(): void
 }
 
 function oscToJson(path: string, value: any): Record<string, any> {

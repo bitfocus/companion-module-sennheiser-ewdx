@@ -40,6 +40,12 @@ export class EWDXReceiver extends EWDX {
 		}
 	}
 
+	// SCPv1 doesn't have an explicit connect step - connection is established via UDP automatically
+	connect(): void {
+		// Connection is handled automatically by the UDP socket in the base class
+		console.log('debug', 'SCPv1 connection established via UDP')
+	}
+
 	resetValues(): void {
 		this.firmwareVersion = UNKNOWN
 		this.brightness = 0
@@ -649,6 +655,12 @@ export class EWDXReceiver extends EWDX {
 		for (let i = 1; i <= this.channels.length; i++) {
 			this.channels[i - 1].publishVariableValues()
 		}
+	}
+
+	destroy(): void {
+		// Clean up socket and timers if needed
+		// The socket cleanup is handled by the framework
+		console.log('debug', 'EWDXReceiver destroyed')
 	}
 }
 

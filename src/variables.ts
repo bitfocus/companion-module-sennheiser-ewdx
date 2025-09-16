@@ -1,10 +1,16 @@
 import { EWDXReceiver } from './ewdxReceiver.js'
+import { EWDXReceiverSCPv2 } from './ewdxReceiverSCPv2.js'
 import type { ModuleInstance } from './main.js'
 import { DeviceModel } from './ewdx.js'
 import { CHG70N } from './chg70n.js'
 
 export function UpdateVariableDefinitions(self: ModuleInstance): void {
-	if (self.device instanceof EWDXReceiver) {
+	// Helper function to check if device is a receiver (SCPv1 or SCPv2)
+	function isReceiver(device: any): device is EWDXReceiver | EWDXReceiverSCPv2 {
+		return device instanceof EWDXReceiver || device instanceof EWDXReceiverSCPv2
+	}
+
+	if (isReceiver(self.device)) {
 		const numChannels = self.device.model === DeviceModel.EM4 ? 4 : 2
 
 		const deviceVariables = [

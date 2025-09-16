@@ -257,6 +257,12 @@ export class CHG70N extends EWDX {
 		this.chargingBays[1] = new ChargingBay(2, this)
 	}
 
+	// CHG70N doesn't have an explicit connect step - connection is established via UDP automatically
+	connect(): void {
+		// Connection is handled automatically by the UDP socket in the base class
+		console.log('debug', 'CHG70N connection established via UDP')
+	}
+
 	resetAllValues(): void {
 		this.resetValues()
 		for (let i = 0; i <= 1; i++) {
@@ -509,5 +515,10 @@ export class CHG70N extends EWDX {
 		for (let i = 1; i <= this.chargingBays.length; i++) {
 			this.chargingBays[i - 1].publishVariableValues()
 		}
+	}
+
+	destroy(): void {
+		// Clean up any resources if needed
+		console.log('debug', 'CHG70N destroyed')
 	}
 }
