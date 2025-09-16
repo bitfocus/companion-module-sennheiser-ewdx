@@ -90,6 +90,26 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				return receiver.linkDensityMode
 			},
 		}
+		feedbacks.tx_muted = {
+			name: 'TX: Muted',
+			type: 'boolean',
+			defaultStyle: {
+				bgcolor: combineRgb(0, 255, 0),
+			},
+			options: [
+				{
+					id: 'receiver',
+					type: 'dropdown',
+					label: 'Receiver Channel',
+					default: 0,
+					choices: getChannelOptions(),
+				},
+			],
+			callback: (feedback) => {
+				const channel = Number(feedback.options.receiver)
+				return receiver.channels[channel].mate.muted
+			},
+		}
 		feedbacks.rx_encryption_error = {
 			name: 'RX: Encryption Error',
 			description: 'Becomes active if an encryption error occurs on the selected channel',
@@ -153,26 +173,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				return receiver.channels[channel].identification
 			},
 		}
-		feedbacks.rx_muted = {
-			name: 'RX: Muted',
-			type: 'boolean',
-			defaultStyle: {
-				bgcolor: combineRgb(0, 255, 0),
-			},
-			options: [
-				{
-					id: 'receiver',
-					type: 'dropdown',
-					label: 'Receiver Channel',
-					default: 0,
-					choices: getChannelOptions(),
-				},
-			],
-			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
-				return receiver.channels[channel].muted
-			},
-		}
+
 		feedbacks.tx_mute_config_sk = {
 			name: 'RX: Mute Config [SK(M)]',
 			type: 'boolean',
