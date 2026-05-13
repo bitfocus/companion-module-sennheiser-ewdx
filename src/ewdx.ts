@@ -143,7 +143,7 @@ export abstract class EWDX {
 	}
 
 	private setupListeners() {
-		this.socket.bind(udpPort, this.host, () => {
+		this.socket.bind(0, this.host, () => {
 			console.log('Socket successfully connected.')
 		})
 
