@@ -7,9 +7,9 @@ export enum ChargingDevice {
 	'EW-DX SK 3-pin',
 	'EW-DX SKM',
 	'EW-DX SKM-S',
-	'BA70',
-	'NONE',
-	'UNKNOWN',
+	BA70,
+	NONE,
+	UNKNOWN,
 }
 
 export enum ChargingBayState {

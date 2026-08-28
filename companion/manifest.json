@@ -1,9 +1,11 @@
 {
+	"$schema": "../node_modules/@companion-module/base/assets/manifest.schema.json",
+	"type": "connection",
 	"id": "sennheiser-ewdx",
 	"name": "sennheiser-ewdx",
 	"shortname": "sennheiser-ewdx",
 	"description": "Control devices of the Sennheiser EW-DX Series",
-	"version": "1.0.6",
+	"version": "0.0.0",
 	"license": "MIT",
 	"repository": "git+https://github.com/bitfocus/companion-module-sennheiser-ewdx.git",
 	"bugs": "https://github.com/bitfocus/companion-module-sennheiser-ewdx/issues",

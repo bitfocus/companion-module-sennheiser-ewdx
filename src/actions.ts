@@ -255,7 +255,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				receiver.channels[channel].setMuteConfigSK(muteSetting as MuteOptions)
+				receiver.channels[channel].setMuteConfigSK(muteSetting)
 			},
 		}
 		actions.rx_ss_mute_config_table = {
@@ -284,7 +284,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				receiver.channels[channel].setMuteConfigTable(muteSetting as MuteOptionsTable)
+				receiver.channels[channel].setMuteConfigTable(muteSetting)
 			},
 		}
 		actions.rx_ss_ignore = {
@@ -324,7 +324,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
 				const ignore = Boolean(action.options.ignore)
-				receiver.channels[channel].setSyncIgnore(setting as SyncSettings, ignore)
+				receiver.channels[channel].setSyncIgnore(setting, ignore)
 			},
 		}
 		actions.rx_ss_lowcut = {
@@ -353,7 +353,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const lowcut = Number(action.options.lowcut)
-				receiver.channels[channel].setLowcut(lowcut as LowcutOptions)
+				receiver.channels[channel].setLowcut(lowcut)
 			},
 		}
 		actions.rx_ss_lock = {
@@ -453,7 +453,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
-				receiver.channels[channel].setCableEmulation(setting as CableEmulationOptions)
+				receiver.channels[channel].setCableEmulation(setting)
 			},
 		}
 		actions.rx_name = {
@@ -873,7 +873,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const bay = Number(action.options.bay)
 				const setting = Number(action.options.setting)
-				device.chargingBays[bay].setLowcut(setting as LowcutOptions)
+				device.chargingBays[bay].setLowcut(setting)
 			},
 		}
 		actions.ss_lock = {
