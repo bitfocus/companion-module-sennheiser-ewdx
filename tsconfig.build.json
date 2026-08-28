@@ -4,7 +4,10 @@
 	"exclude": ["node_modules/**", "src/**/*spec.ts", "src/**/__tests__/*", "src/**/__mocks__/*"],
 	"compilerOptions": {
 		"outDir": "./dist",
-		"baseUrl": "./",
+		"rootDir": "./src",
+		// The shared preset sets alwaysStrict to false, which TypeScript 6 rejects as deprecated.
+		// Output is ESM, which is always strict, so emitting "use strict" changes nothing.
+		"alwaysStrict": true,
 		"paths": {
 			"*": ["./node_modules/*"]
 		},

@@ -53,3 +53,51 @@ export const images = {
 	chargeError: await graphics.parseBase64(icons.chargeError, { alpha: true }),
 	disconnected: await graphics.parseBase64(icons.disconnected, { alpha: true }),
 }
+
+export interface IconOptions {
+	/** Width of the canvas to draw the icon onto */
+	width: number
+	/** Height of the canvas to draw the icon onto */
+	height: number
+	/** ARGB pixel data of the icon, as returned by graphics.parseBase64 */
+	custom: Uint8Array
+	customWidth: number
+	customHeight: number
+	offsetX?: number
+	offsetY?: number
+}
+
+/**
+ * Draws a custom icon onto a canvas of the given size, cropping whatever falls outside of it.
+ *
+ * graphics.icon() writes past the end of its buffer when an icon doesn't fully fit, which throws
+ * a RangeError and aborts the entire feedback check. A button drawn with a topbar only gives the
+ * feedback a 72x58 canvas, so icons close to an edge have to be cropped instead.
+ *
+ * @param options - Canvas size, icon data and the position to draw it at
+ * @returns Image buffer of the canvas size, containing the icon
+ */
+export function drawIcon(options: IconOptions): Uint8Array {
+	const buffer = new Uint8Array(options.width * options.height * 4)
+	const offsetX = Math.round(options.offsetX ?? 0)
+	const offsetY = Math.round(options.offsetY ?? 0)
+
+	for (let y = 0; y < options.customHeight; y++) {
+		const canvasY = offsetY + y
+		if (canvasY < 0 || canvasY >= options.height) continue
+
+		for (let x = 0; x < options.customWidth; x++) {
+			const canvasX = offsetX + x
+			if (canvasX < 0 || canvasX >= options.width) continue
+
+			const source = (y * options.customWidth + x) * 4
+			const target = (canvasY * options.width + canvasX) * 4
+			buffer[target] = options.custom[source]
+			buffer[target + 1] = options.custom[source + 1]
+			buffer[target + 2] = options.custom[source + 2]
+			buffer[target + 3] = options.custom[source + 3]
+		}
+	}
+
+	return buffer
+}

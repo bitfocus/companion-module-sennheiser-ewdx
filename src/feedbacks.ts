@@ -1,11 +1,26 @@
 import type { ModuleInstance } from './main.js'
 import { graphics } from 'companion-module-utils'
 import { DantePortMapping, MuteOptions, MuteOptionsTable, SyncSettings, EWDXReceiver } from './ewdxReceiver.js'
-import { images } from './graphics.js'
+import { drawIcon, images, type IconOptions } from './graphics.js'
 
 import { DeviceModel } from './ewdx.js'
 import { ChargingBayState, ChargingBayWarnings, ChargingDevice, CHG70N } from './chg70n.js'
 import { combineRgb, CompanionFeedbackDefinitions } from '@companion-module/base'
+
+/**
+ * Narrows a numeric option value to a member of the given enum.
+ *
+ * Feedback options arrive as plain numbers, so switching over them directly compares a number
+ * against enum members and leaves the switch non exhaustive. Narrowing first keeps the comparison
+ * within one enum type, and lets TypeScript check that every member of it is handled.
+ *
+ * @param enumObject - The enum the value is expected to belong to
+ * @param value - The option value to check
+ * @returns Whether the value is a member of the enum
+ */
+function isEnumValue<T extends Record<string, unknown>>(enumObject: T, value: number): value is T[keyof T] & number {
+	return Object.values(enumObject).includes(value)
+}
 
 export function UpdateFeedbacks(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
@@ -203,7 +218,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 				const setting = Number(feedback.options.setting)
-				switch (setting as MuteOptions) {
+				if (!isEnumValue(MuteOptions, setting)) return false
+				switch (setting) {
 					case MuteOptions.off:
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.off
 					case MuteOptions.af_mute:
@@ -243,7 +259,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 				const setting = Number(feedback.options.setting)
-				switch (setting as MuteOptionsTable) {
+				if (!isEnumValue(MuteOptionsTable, setting)) return false
+				switch (setting) {
 					case MuteOptionsTable.off:
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.off
 					case MuteOptionsTable.af_mute:
@@ -290,7 +307,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 				const setting = Number(feedback.options.setting)
-				switch (setting as SyncSettings) {
+				if (!isEnumValue(SyncSettings, setting)) return false
+				switch (setting) {
 					case SyncSettings.trim_ignore:
 						return receiver.channels[channel].syncIgnoreTrim
 					case SyncSettings.name_ignore:
@@ -307,8 +325,6 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						return receiver.channels[channel].syncIgnoreFrequency
 					case SyncSettings.cable_emulation_ignore:
 						return receiver.channels[channel].syncIgnoreCableEmulation
-					default:
-						return false
 				}
 			},
 		}
@@ -329,11 +345,16 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				const channel = Number(feedback.options.receiver)
 
 				if (feedback.image) {
-					const commonIconProps: graphics.OptionsIcon = {
+					const commonIconProps: Pick<IconOptions, 'width' | 'height'> = {
 						width: feedback.image.width,
 						height: feedback.image.height,
-						type: 'custom',
 					}
+					// Icon rows are derived from the canvas size rather than assuming a 72x72 button:
+					// with a topbar the feedback only gets a 72x58 canvas to draw on
+					const iconSize = 16
+					const bottomRow = Math.max(0, feedback.image.height - iconSize - 3)
+					const topRow = Math.max(0, Math.min(15, bottomRow - 2 * iconSize))
+					const middleRow = Math.round((topRow + bottomRow) / 2)
 					if (self.device.deviceConnected) {
 						const cornerOptionsLeft: graphics.OptionsCorner = {
 							width: feedback.image.width,
@@ -421,44 +442,44 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						}
 						elements.push(graphics.rect(batteryOptions2))
 
-						const antennaProps: graphics.OptionsIcon = {
+						const antennaProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: 2,
-							offsetY: 53,
-							customWidth: 16,
-							customHeight: 16,
+							offsetY: bottomRow,
+							customWidth: iconSize,
+							customHeight: iconSize,
 						}
 
-						const afPeakProps: graphics.OptionsIcon = {
+						const afPeakProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
-							offsetX: feedback.image.width - 2 - 16,
-							offsetY: 15,
-							customWidth: 16,
-							customHeight: 16,
+							offsetX: feedback.image.width - 2 - iconSize,
+							offsetY: topRow,
+							customWidth: iconSize,
+							customHeight: iconSize,
 						}
 
-						const shieldProps: graphics.OptionsIcon = {
+						const shieldProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
-							offsetX: feedback.image.width - 2 - 16,
-							offsetY: 53,
-							customWidth: 16,
-							customHeight: 16,
+							offsetX: feedback.image.width - 2 - iconSize,
+							offsetY: bottomRow,
+							customWidth: iconSize,
+							customHeight: iconSize,
 						}
 
-						const muteProps: graphics.OptionsIcon = {
+						const muteProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: 2,
-							offsetY: 34,
-							customWidth: 16,
-							customHeight: 16,
+							offsetY: middleRow,
+							customWidth: iconSize,
+							customHeight: iconSize,
 						}
 
-						const warningProps: graphics.OptionsIcon = {
+						const warningProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
-							offsetX: feedback.image.width - 2 - 16,
-							offsetY: 34,
-							customWidth: 16,
-							customHeight: 16,
+							offsetX: feedback.image.width - 2 - iconSize,
+							offsetY: middleRow,
+							customWidth: iconSize,
+							customHeight: iconSize,
 						}
 
 						const identBarProps: graphics.OptionsBar = {
@@ -478,7 +499,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (receiver.channels[channel].hasAfPeakWarning == true) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...afPeakProps,
 									custom: images.afpeak,
 								}),
@@ -491,7 +512,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (receiver.channels[channel].warnings) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...warningProps,
 									custom: images.warning,
 								}),
@@ -500,7 +521,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (receiver.channels[channel].hasAes256Error) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...shieldProps,
 									custom: images.shield.red,
 								}),
@@ -508,14 +529,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						} else {
 							if (receiver.encryption) {
 								elements.push(
-									graphics.icon({
+									drawIcon({
 										...shieldProps,
 										custom: images.shield.green,
 									}),
 								)
 							} else {
 								elements.push(
-									graphics.icon({
+									drawIcon({
 										...shieldProps,
 										custom: images.shield.gray,
 									}),
@@ -525,28 +546,28 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (receiver.channels[channel].rsqi > 70) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...antennaProps,
 									custom: images.antenna.green,
 								}),
 							)
 						} else if (receiver.channels[channel].rsqi > 40) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...antennaProps,
 									custom: images.antenna.yellow,
 								}),
 							)
 						} else if (receiver.channels[channel].rsqi >= 1) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...antennaProps,
 									custom: images.antenna.red,
 								}),
 							)
 						} else {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...antennaProps,
 									custom: images.antenna.gray,
 								}),
@@ -554,7 +575,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						}
 						if (receiver.channels[channel].mate.muted) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...muteProps,
 									custom: images.mute,
 								}),
@@ -590,16 +611,16 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 								'%',
 						}
 					} else {
-						const warningProps: graphics.OptionsIcon = {
+						const warningProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
-							offsetX: feedback.image.width / 2 - 8,
+							offsetX: Math.floor(feedback.image.width / 2) - 8,
 							offsetY: 8,
-							customWidth: 16,
-							customHeight: 16,
+							customWidth: iconSize,
+							customHeight: iconSize,
 						}
 
 						return {
-							imageBuffer: graphics.icon({
+							imageBuffer: drawIcon({
 								...warningProps,
 								custom: images.disconnected,
 							}),
@@ -668,11 +689,12 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: async (feedback) => {
 				const bay = Number(feedback.options.bay)
 				if (feedback.image) {
-					const commonIconProps: graphics.OptionsIcon = {
+					const commonIconProps: Pick<IconOptions, 'width' | 'height'> = {
 						width: feedback.image.width,
 						height: feedback.image.height,
-						type: 'custom',
 					}
+					// Keep the icon row on the canvas when a topbar reduces its height
+					const iconRow = Math.min(37, Math.max(0, feedback.image.height - 16 - 3))
 					if (self.device.deviceConnected) {
 						const elements: Uint8Array[] = []
 
@@ -729,7 +751,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							offsetY: 8,
 						}
 
-						const warningProps: graphics.OptionsIcon = {
+						const warningProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
 							offsetY: 3,
@@ -737,34 +759,34 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							customHeight: 16,
 						}
 
-						const overcurrentProps: graphics.OptionsIcon = {
+						const overcurrentProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: 2,
-							offsetY: 37,
+							offsetY: iconRow,
 							customWidth: 16,
 							customHeight: 16,
 						}
 
-						const temperatureProps: graphics.OptionsIcon = {
+						const temperatureProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: 19,
-							offsetY: 37,
+							offsetY: iconRow,
 							customWidth: 16,
 							customHeight: 16,
 						}
 
-						const communicationErrorProps: graphics.OptionsIcon = {
+						const communicationErrorProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: 36,
-							offsetY: 37,
+							offsetY: iconRow,
 							customWidth: 16,
 							customHeight: 16,
 						}
 
-						const chargeErrorProps: graphics.OptionsIcon = {
+						const chargeErrorProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
 							offsetX: 55,
-							offsetY: 37,
+							offsetY: iconRow,
 							customWidth: 16,
 							customHeight: 16,
 						}
@@ -799,11 +821,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						if (device.chargingBays[bay].state == ChargingBayState.NORMAL) {
 							const circle = graphics.circle(okCircleProps)
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									width: feedback.image.width,
 									height: feedback.image.height,
 									custom: circle,
-									type: 'custom',
 									customHeight: 12,
 									customWidth: 12,
 									offsetX: 5,
@@ -813,11 +834,10 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						} else {
 							const circle = graphics.circle(errorCircleProps)
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									width: feedback.image.width,
 									height: feedback.image.height,
 									custom: circle,
-									type: 'custom',
 									customHeight: 12,
 									customWidth: 12,
 									offsetX: 5,
@@ -828,7 +848,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (device.chargingBays[bay].syncError) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...warningProps,
 									custom: images.warning,
 								}),
@@ -837,7 +857,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryTempOutOfRange)) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...temperatureProps,
 									custom: images.temperature,
 								}),
@@ -846,7 +866,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.OvercurrentDetected)) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...overcurrentProps,
 									custom: images.overcurrent,
 								}),
@@ -855,7 +875,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						if (device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryComError)) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...communicationErrorProps,
 									custom: images.communicationError,
 								}),
@@ -867,7 +887,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							device.chargingBays[bay].warnings.includes(ChargingBayWarnings.BatteryNotDischargeable)
 						) {
 							elements.push(
-								graphics.icon({
+								drawIcon({
 									...chargeErrorProps,
 									custom: images.chargeError,
 								}),
@@ -897,16 +917,16 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 								ChargingDevice[device.chargingBays[bay].chargingDevice],
 						}
 					} else {
-						const warningProps: graphics.OptionsIcon = {
+						const warningProps: Omit<IconOptions, 'custom'> = {
 							...commonIconProps,
-							offsetX: feedback.image.width / 2 - 8,
+							offsetX: Math.floor(feedback.image.width / 2) - 8,
 							offsetY: 2,
 							customWidth: 16,
 							customHeight: 16,
 						}
 
 						return {
-							imageBuffer: graphics.icon({
+							imageBuffer: drawIcon({
 								...warningProps,
 								custom: images.disconnected,
 							}),
