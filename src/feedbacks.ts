@@ -577,6 +577,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						return {
 							imageBuffer: graphics.stackImage(elements),
+							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text:
 								batteryInfo +
 								'\\n\\n' +
@@ -603,12 +604,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 								...warningProps,
 								custom: images.disconnected,
 							}),
+							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text: '\\nReceiver not connected',
 						}
 					}
 				} else {
 					return {
 						imageBuffer: new Uint8Array(),
+						imageBufferEncoding: { pixelFormat: 'ARGB' },
 					}
 				}
 			},
@@ -889,6 +892,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 
 						return {
 							imageBuffer: graphics.stackImage(elements),
+							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text:
 								device.chargingBays[bay].batGauge +
 								'%\\n\\nFull: ' +
@@ -910,12 +914,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 								...warningProps,
 								custom: images.disconnected,
 							}),
+							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text: '\\nCharger not connected',
 						}
 					}
 				} else {
 					return {
 						imageBuffer: new Uint8Array(),
+						imageBufferEncoding: { pixelFormat: 'ARGB' },
 					}
 				}
 			},
