@@ -2,6 +2,9 @@ import type { ModuleInstance } from './main.js'
 import { graphics } from 'companion-module-utils'
 import { DantePortMapping, MuteOptions, MuteOptionsTable, SyncSettings, EWDXReceiver } from './ewdxReceiver.js'
 import { images } from './graphics.js'
+import { formatBatteryLabel } from './statusText.js'
+import { getReceiverDisplayState } from './receiverDisplay.js'
+import { getChargerDisplayState } from './chargerDisplay.js'
 
 import { DeviceModel } from './ewdx.js'
 import { ChargingBayState, ChargingBayWarnings, ChargingDevice, CHG70N } from './chg70n.js'
@@ -203,13 +206,15 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 				const setting = Number(feedback.options.setting)
-				switch (setting as MuteOptions) {
-					case MuteOptions.off:
+				switch (setting) {
+					case Number(MuteOptions.off):
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.off
-					case MuteOptions.af_mute:
+					case Number(MuteOptions.af_mute):
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.af_mute
-					case MuteOptions.rf_mute:
+					case Number(MuteOptions.rf_mute):
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.rf_mute
+					default:
+						return false
 				}
 			},
 		}
@@ -243,15 +248,17 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 				const setting = Number(feedback.options.setting)
-				switch (setting as MuteOptionsTable) {
-					case MuteOptionsTable.off:
+				switch (setting) {
+					case Number(MuteOptionsTable.off):
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.off
-					case MuteOptionsTable.af_mute:
+					case Number(MuteOptionsTable.af_mute):
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.af_mute
-					case MuteOptionsTable.push_to_talk:
+					case Number(MuteOptionsTable.push_to_talk):
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_talk
-					case MuteOptionsTable.push_to_mute:
+					case Number(MuteOptionsTable.push_to_mute):
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_mute
+					default:
+						return false
 				}
 			},
 		}
@@ -290,32 +297,42 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			callback: (feedback) => {
 				const channel = Number(feedback.options.receiver)
 				const setting = Number(feedback.options.setting)
-				switch (setting as SyncSettings) {
-					case SyncSettings.trim_ignore:
+				switch (setting) {
+					case Number(SyncSettings.trim_ignore):
 						return receiver.channels[channel].syncIgnoreTrim
-					case SyncSettings.name_ignore:
+					case Number(SyncSettings.name_ignore):
 						return receiver.channels[channel].syncIgnoreName
-					case SyncSettings.mute_config_ignore:
+					case Number(SyncSettings.mute_config_ignore):
 						return receiver.channels[channel].syncIgnoreMuteConfig
-					case SyncSettings.lowcut_ignore:
+					case Number(SyncSettings.lowcut_ignore):
 						return receiver.channels[channel].syncIgnoreLowcut
-					case SyncSettings.lock_ignore:
+					case Number(SyncSettings.lock_ignore):
 						return receiver.channels[channel].syncIgnoreLock
-					case SyncSettings.led_ignore:
+					case Number(SyncSettings.led_ignore):
 						return receiver.channels[channel].syncIgnoreLED
-					case SyncSettings.frequency_ignore:
+					case Number(SyncSettings.frequency_ignore):
 						return receiver.channels[channel].syncIgnoreFrequency
-					case SyncSettings.cable_emulation_ignore:
+					case Number(SyncSettings.cable_emulation_ignore):
 						return receiver.channels[channel].syncIgnoreCableEmulation
 					default:
 						return false
 				}
 			},
 		}
+		feedbacks.receiverDisplay = {
+			name: 'RX: Status Display Data',
+			description: 'Provides live data for the native layered channel status preset',
+			type: 'value',
+			options: [
+				{ id: 'receiver', type: 'dropdown', label: 'Receiver Channel', default: 0, choices: getChannelOptions() },
+			],
+			callback: (feedback) => getReceiverDisplayState(receiver, Number(feedback.options.receiver)),
+		}
 		feedbacks.receiverState = {
 			name: 'RX: Status Display',
 			description: 'Displays detailed information about the selected receiver channel',
 			type: 'advanced',
+			affectedProperties: ['imageBuffer', 'text', 'size', 'alignment'],
 			options: [
 				{
 					id: 'receiver',
@@ -424,7 +441,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						const antennaProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 2,
-							offsetY: 53,
+							// Keep the original 3px bottom margin and 16px icon size on shorter buttons.
+							offsetY: feedback.image.height - 3 - 16,
 							customWidth: 16,
 							customHeight: 16,
 						}
@@ -432,7 +450,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						const afPeakProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
-							offsetY: 15,
+							offsetY: feedback.image.height - 3 - 16 - 38,
 							customWidth: 16,
 							customHeight: 16,
 						}
@@ -440,7 +458,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						const shieldProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
-							offsetY: 53,
+							offsetY: feedback.image.height - 3 - 16,
 							customWidth: 16,
 							customHeight: 16,
 						}
@@ -448,7 +466,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						const muteProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: 2,
-							offsetY: 34,
+							offsetY: feedback.image.height - 3 - 16 - 19,
 							customWidth: 16,
 							customHeight: 16,
 						}
@@ -456,7 +474,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						const warningProps: graphics.OptionsIcon = {
 							...commonIconProps,
 							offsetX: feedback.image.width - 2 - 16,
-							offsetY: 34,
+							offsetY: feedback.image.height - 3 - 16 - 19,
 							customWidth: 16,
 							customHeight: 16,
 						}
@@ -561,23 +579,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 							)
 						}
 
-						let batteryInfo
-
-						if (
-							receiver.channels[channel].mate.batteryType === 'Battery' &&
-							receiver.channels[channel].mate.batteryLifetime != 0
-						) {
-							const minutes = receiver.channels[channel].mate.batteryLifetime
-							const hours = Math.floor(minutes / 60)
-							const remainingMinutes = minutes % 60
-							batteryInfo = `${hours}:${remainingMinutes}h`
-						} else {
-							batteryInfo = `${receiver.channels[channel].mate.batteryGauge}%`
-						}
+						const mate = receiver.channels[channel].mate
+						const batteryInfo = formatBatteryLabel(mate.batteryType, mate.batteryLifetime, mate.batteryGauge)
 
 						return {
-							imageBuffer: graphics.stackImage(elements),
+							imageBuffer: Buffer.from(graphics.stackImage(elements)).toString('base64'),
 							imageBufferEncoding: { pixelFormat: 'ARGB' },
+							size: 9,
+							alignment: 'center:center',
 							text:
 								batteryInfo +
 								'\\n\\n' +
@@ -600,17 +609,19 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						}
 
 						return {
-							imageBuffer: graphics.icon({
-								...warningProps,
-								custom: images.disconnected,
-							}),
+							imageBuffer: Buffer.from(
+								graphics.icon({
+									...warningProps,
+									custom: images.disconnected,
+								}),
+							).toString('base64'),
 							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text: '\\nReceiver not connected',
 						}
 					}
 				} else {
 					return {
-						imageBuffer: new Uint8Array(),
+						imageBuffer: '',
 						imageBufferEncoding: { pixelFormat: 'ARGB' },
 					}
 				}
@@ -652,10 +663,21 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 		/* CHG70N Feedbacks */
 	} else if (self.device instanceof CHG70N) {
 		const device: CHG70N = self.device
+		feedbacks.chargerDisplay = {
+			name: 'Charging Bay: Status Display Data',
+			description: 'Provides live data for the native layered bay status preset',
+			type: 'value',
+			options: [{
+				id: 'bay', type: 'dropdown', label: 'Charging Bay', default: 0,
+				choices: [{ id: 0, label: 'Bay 1' }, { id: 1, label: 'Bay 2' }],
+			}],
+			callback: (feedback) => getChargerDisplayState(device, Number(feedback.options.bay)),
+		}
 		feedbacks.baystate = {
 			name: 'Charging Bay: Status Display',
-			description: 'Shows important information about the selected charging bay',
+			description: 'Legacy image-buffer display. Apply the Bay Status preset for native graphics without deprecated image buffers.',
 			type: 'advanced',
+			affectedProperties: ['imageBuffer', 'text', 'size', 'alignment'],
 			options: [
 				{
 					id: 'bay',
@@ -891,7 +913,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						elements.push(graphics.rect(batteryOptions2))
 
 						return {
-							imageBuffer: graphics.stackImage(elements),
+							imageBuffer: Buffer.from(graphics.stackImage(elements)).toString('base64'),
 							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text:
 								device.chargingBays[bay].batGauge +
@@ -910,17 +932,19 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						}
 
 						return {
-							imageBuffer: graphics.icon({
-								...warningProps,
-								custom: images.disconnected,
-							}),
+							imageBuffer: Buffer.from(
+								graphics.icon({
+									...warningProps,
+									custom: images.disconnected,
+								}),
+							).toString('base64'),
 							imageBufferEncoding: { pixelFormat: 'ARGB' },
 							text: '\\nCharger not connected',
 						}
 					}
 				} else {
 					return {
-						imageBuffer: new Uint8Array(),
+						imageBuffer: '',
 						imageBufferEncoding: { pixelFormat: 'ARGB' },
 					}
 				}

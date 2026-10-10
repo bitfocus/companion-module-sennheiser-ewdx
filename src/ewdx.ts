@@ -134,7 +134,7 @@ export abstract class EWDX {
 		this.responseTimeout = setTimeout(() => {
 			this.resetAllValues()
 			this.deviceConnected = false
-			this.context.checkFeedbacks()
+			this.context.checkAllFeedbacks()
 			this.context.updateStatus(
 				InstanceStatus.Disconnected,
 				'Device not responding - make sure its connected and turned on.',
