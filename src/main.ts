@@ -1,6 +1,5 @@
-import { InstanceBase, runEntrypoint, InstanceStatus, SomeCompanionConfigField } from '@companion-module/base'
+import { InstanceBase, InstanceStatus, SomeCompanionConfigField, type InstanceTypes } from '@companion-module/base'
 import { GetConfigFields, type ModuleConfig } from './config.js'
-import { UpgradeScripts } from './upgrades.js'
 import { UpdateActions } from './actions.js'
 import { UpdateFeedbacks } from './feedbacks.js'
 import { UpdateVariableDefinitions } from './variables.js'
@@ -9,7 +8,9 @@ import { UpdatePresets } from './presets.js'
 import { CHG70N } from './chg70n.js'
 import { EWDXReceiver } from './ewdxReceiver.js'
 
-export class ModuleInstance extends InstanceBase<ModuleConfig> {
+export type ModuleTypes = Omit<InstanceTypes, 'config'> & { config: ModuleConfig }
+
+export class ModuleInstance extends InstanceBase<ModuleTypes> {
 	config!: ModuleConfig
 	device!: EWDX
 
@@ -70,4 +71,5 @@ export class ModuleInstance extends InstanceBase<ModuleConfig> {
 	}
 }
 
-runEntrypoint(ModuleInstance, UpgradeScripts)
+export default ModuleInstance
+export { UpgradeScripts } from './upgrades.js'

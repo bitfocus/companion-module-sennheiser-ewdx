@@ -1,33 +1,26 @@
-import { combineRgb, CompanionPresetDefinitions } from '@companion-module/base'
-import { ModuleInstance } from './main.js'
+import { CompanionPresetDefinitions } from '@companion-module/base'
+import type { ModuleInstance, ModuleTypes } from './main.js'
 import { DeviceModel } from './ewdx.js'
 import { EWDXReceiver } from './ewdxReceiver.js'
 import { CHG70N } from './chg70n.js'
+import { receiverDisplayElements } from './receiverDisplay.js'
+import { chargerDisplayElements } from './chargerDisplay.js'
+import { ButtonGraphicsDecorationType } from '@companion-module/base'
 
 export function UpdatePresets(self: ModuleInstance): void {
-	const presets: CompanionPresetDefinitions = {}
+	const presets: CompanionPresetDefinitions<ModuleTypes> = {}
 
 	if (self.device instanceof EWDXReceiver) {
-		const createPreset = (receiver: number): CompanionPresetDefinitions => ({
+		const createPreset = (receiver: number): CompanionPresetDefinitions<ModuleTypes> => ({
 			[`receiver_channel_status_${receiver}`]: {
-				type: 'button',
-				category: 'Channel Status',
+				type: 'layered',
 				name: `Channel Status RX${receiver + 1}`,
-				style: {
-					size: 9,
-					text: `Channel Status RX${receiver + 1}`,
-					color: combineRgb(255, 255, 255),
-					bgcolor: 0,
-					show_topbar: false,
-				},
-				feedbacks: [
-					{
-						feedbackId: 'receiverState',
-						options: {
-							receiver: receiver,
-						},
-					},
+				canvas: { decoration: ButtonGraphicsDecorationType.None },
+				elements: receiverDisplayElements(),
+				localVariables: [
+					{ variableName: 'status', variableType: 'feedback', feedbackId: 'receiverDisplay', options: { receiver } },
 				],
+				feedbacks: [],
 				steps: [
 					{
 						down: [
@@ -50,26 +43,16 @@ export function UpdatePresets(self: ModuleInstance): void {
 			Object.assign(presets, createPreset(i))
 		}
 	} else if (self.device instanceof CHG70N) {
-		const createPreset = (bay: number): CompanionPresetDefinitions => ({
+		const createPreset = (bay: number): CompanionPresetDefinitions<ModuleTypes> => ({
 			[`bay_status_${bay}`]: {
-				type: 'button',
-				category: 'Bay Status',
+				type: 'layered',
 				name: `Status Charging Bay ${bay + 1}`,
-				style: {
-					size: 9,
-					text: `Status Bay ${bay + 1}`,
-					color: combineRgb(255, 255, 255),
-					bgcolor: 0,
-					show_topbar: false,
-				},
-				feedbacks: [
-					{
-						feedbackId: 'baystate',
-						options: {
-							bay: bay,
-						},
-					},
+				canvas: { decoration: ButtonGraphicsDecorationType.None },
+				elements: chargerDisplayElements(),
+				localVariables: [
+					{ variableName: 'status', variableType: 'feedback', feedbackId: 'chargerDisplay', options: { bay } },
 				],
+				feedbacks: [],
 				steps: [
 					{
 						down: [
@@ -92,5 +75,14 @@ export function UpdatePresets(self: ModuleInstance): void {
 		}
 	}
 
-	self.setPresetDefinitions(presets)
+	self.setPresetDefinitions(
+		[
+			{
+				id: 'status',
+				name: self.device instanceof EWDXReceiver ? 'Channel Status' : 'Bay Status',
+				definitions: Object.keys(presets),
+			},
+		],
+		presets,
+	)
 }

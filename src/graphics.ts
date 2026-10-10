@@ -1,6 +1,6 @@
 import { graphics } from 'companion-module-utils'
 
-const icons = {
+export const icons = {
 	antenna: {
 		red: 'iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAMAAAAoLQ9TAAAAAXNSR0IB2cksfwAAAAlwSFlzAAAOxAAADsQBlSsOGwAAALFQTFRFAAAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA/wAA7ZLiwgAAADt0Uk5TADjBVmL75UBK/b0SCtUMCHAOaP9EArXnGrvb9yoWheufq6fJicWD75upuddUJr9qRvnh3xg62TBci9NgxatkAAAA3ElEQVR4nCXP3UvCYBgF8HPaaMW8SG9cm2JWVrMgIqTo/ycKiW4qpS8L3Zg32c2gxeTpuM7N857fxQuHAEgudRwzUwFcQSHwBKVgQz3HKr7kh7VfT8IF6qpWrLPBKhkCq8Jtpk4ggUq2DI0dfnT5vveNrbddm+wYN6PXHueu/iyb9rKf8JDjGKP+HM0n3SPjWvx4smhMCnjdr/rDscPTWTvJO6Mz3MeffjRtsXZAji0X+G7P7JkYpBFvIcCFJeFQW7wgPb8RXN6FWbEah3arHAoG7mxara1yhev/xx9CUl0AK2vLUgAAAABJRU5ErkJggg==',
 		yellow:

@@ -645,7 +645,7 @@ export class EWDXReceiver extends EWDX {
 				}
 			}
 		}
-		this.context.checkFeedbacks()
+		this.context.checkAllFeedbacks()
 		for (let i = 1; i <= this.channels.length; i++) {
 			this.channels[i - 1].publishVariableValues()
 		}

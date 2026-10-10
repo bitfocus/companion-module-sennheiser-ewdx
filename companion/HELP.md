@@ -1,5 +1,9 @@
 # Sennheiser EW DX Series
 
+## Important
+
+Because of large changes inside the Companion application you need to replace existing buttons with the new presets to get the status displays working again!
+
 ## Getting started
 
 Just select the device from the module config window and enter the control IP of your EM2/EM4 receiver or network charger and press 'Save'. To control multiple devices, just add the connection several times to your Companion instance.
@@ -11,9 +15,13 @@ This module stores pretty much all information the connected devices provide - s
 
 ### EM2/EM4 Status Display Explanation
 
+The channel status presets use Companion 5's native drawing layers and standard font. The battery label sits inside the battery, the channel name and frequency have their own text regions, and the mute and warning icons occupy separate footer slots. The canvas decoration is set to **None**, so the antenna indicators reach the top edge without reserving space for the top bar.
+
+After updating from the legacy status display, apply the **Channel Status** preset again. Existing buttons retain their original layers; module upgrade scripts cannot replace those layers. The legacy `RX: Status Display` feedback remains available for existing buttons.
+
 In the module presets you will find a status display for every receiver channel of your device. It contains the following information:
 
-- Battery Percentage
+- Battery percentage or remaining runtime as `H:MMh` (for example, 312 minutes is `5:12h`)
 - Receiver channel name
 - Frequency
 - RSQI
@@ -49,6 +57,8 @@ Beside this information the following icons are used:
 When the RX identification is active (either by triggering from Companion or by pressing the Power Button on a transmitter), a green bar at the bottom of the button is shown. If you are using the preset, the identify action will be already assigned to the button.
 
 ### CHG 70N Status Display Explanation
+
+The **Bay Status** presets use native Companion layers, with the percentage inside the colored battery, separate device and charging-time text, and dedicated warning icon slots. After updating, apply the preset again to replace existing legacy buttons. The old `Charging Bay: Status Display` feedback uses deprecated image buffers and is retained only for existing buttons.
 
 In the module presets you will find a status display for every charging bay of your device. It contains the following information:
 

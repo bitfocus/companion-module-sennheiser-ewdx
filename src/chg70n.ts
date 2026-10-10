@@ -7,9 +7,9 @@ export enum ChargingDevice {
 	'EW-DX SK 3-pin',
 	'EW-DX SKM',
 	'EW-DX SKM-S',
-	'BA70',
-	'NONE',
-	'UNKNOWN',
+	BA70,
+	NONE,
+	UNKNOWN,
 }
 
 export enum ChargingBayState {
@@ -505,7 +505,7 @@ export class CHG70N extends EWDX {
 			}
 		}
 
-		this.context.checkFeedbacks()
+		this.context.checkAllFeedbacks()
 		for (let i = 1; i <= this.chargingBays.length; i++) {
 			this.chargingBays[i - 1].publishVariableValues()
 		}

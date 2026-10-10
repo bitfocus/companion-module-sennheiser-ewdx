@@ -12,6 +12,10 @@ import {
 import { DeviceModel } from './ewdx.js'
 import { CHG70N } from './chg70n.js'
 
+function optionString(value: unknown): string {
+	return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : ''
+}
+
 export function UpdateActions(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
 		const maxChannels = self.device.model === DeviceModel.EM4 ? 4 : 2
@@ -43,8 +47,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		],
 		callback: async (action) => {
-			const name = String(action.options.name)
-			const parsedName = await self.parseVariablesInString(name)
+			const parsedName = optionString(action.options.name)
 			self.device.setName(parsedName)
 		},
 	}
@@ -60,7 +63,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		],
 		callback: async (action) => {
-			const location = String(action.options.location)
+			const location = optionString(action.options.location)
 			self.device.setLocation(location)
 		},
 	}
@@ -105,9 +108,9 @@ export function UpdateActions(self: ModuleInstance): void {
 		callback: async (action) => {
 			const dhcp = Boolean(action.options.dhcp)
 			const mdns = Boolean(action.options.mdns)
-			const ip = String(action.options.ip)
-			const netmask = String(action.options.netmask)
-			const gateway = String(action.options.gateway)
+			const ip = optionString(action.options.ip)
+			const netmask = optionString(action.options.netmask)
+			const gateway = optionString(action.options.gateway)
 			self.device.setNetworkSettings(dhcp, mdns, ip, netmask, gateway)
 		},
 	}
@@ -216,7 +219,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
-				const mute = String(action.options.mute)
+				const mute = optionString(action.options.mute)
 				switch (mute) {
 					case 'mute':
 						receiver.channels[channel].setMuteState(true)
@@ -255,7 +258,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				receiver.channels[channel].setMuteConfigSK(muteSetting as MuteOptions)
+				receiver.channels[channel].setMuteConfigSK(muteSetting)
 			},
 		}
 		actions.rx_ss_mute_config_table = {
@@ -284,7 +287,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const muteSetting = Number(action.options.setting)
-				receiver.channels[channel].setMuteConfigTable(muteSetting as MuteOptionsTable)
+				receiver.channels[channel].setMuteConfigTable(muteSetting)
 			},
 		}
 		actions.rx_ss_ignore = {
@@ -324,7 +327,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
 				const ignore = Boolean(action.options.ignore)
-				receiver.channels[channel].setSyncIgnore(setting as SyncSettings, ignore)
+				receiver.channels[channel].setSyncIgnore(setting, ignore)
 			},
 		}
 		actions.rx_ss_lowcut = {
@@ -353,7 +356,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const lowcut = Number(action.options.lowcut)
-				receiver.channels[channel].setLowcut(lowcut as LowcutOptions)
+				receiver.channels[channel].setLowcut(lowcut)
 			},
 		}
 		actions.rx_ss_lock = {
@@ -453,7 +456,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
 				const setting = Number(action.options.setting)
-				receiver.channels[channel].setCableEmulation(setting as CableEmulationOptions)
+				receiver.channels[channel].setCableEmulation(setting)
 			},
 		}
 		actions.rx_name = {
@@ -476,8 +479,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
-				const name = String(action.options.name)
-				const parsedName = await self.parseVariablesInString(name)
+				const parsedName = optionString(action.options.name)
 				receiver.channels[channel].setName(parsedName)
 			},
 		}
@@ -539,7 +541,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const channel = Number(action.options.receiver)
-				const direction = String(action.options.direction)
+				const direction = optionString(action.options.direction)
 				const steps = Number(action.options.steps)
 				const availableGains = Array.from({ length: 16 }, (_, i) => -3 + i * 3)
 
@@ -654,9 +656,9 @@ export function UpdateActions(self: ModuleInstance): void {
 					callback: async (action) => {
 						const interfaceId = Number(action.options.danteInterface)
 						const dhcp = Boolean(action.options.dhcp)
-						const ip = String(action.options.ip)
-						const netmask = String(action.options.netmask)
-						const gateway = String(action.options.gateway)
+						const ip = optionString(action.options.ip)
+						const netmask = optionString(action.options.netmask)
+						const gateway = optionString(action.options.gateway)
 						receiver.setDanteNetworkSettings(interfaceId, dhcp, ip, netmask, gateway)
 					},
 				}
@@ -839,7 +841,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			],
 			callback: async (action) => {
 				const bay = Number(action.options.bay)
-				const setting = String(action.options.setting)
+				const setting = optionString(action.options.setting)
 				device.chargingBays[bay].setName(setting)
 			},
 		}
@@ -873,7 +875,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			callback: async (action) => {
 				const bay = Number(action.options.bay)
 				const setting = Number(action.options.setting)
-				device.chargingBays[bay].setLowcut(setting as LowcutOptions)
+				device.chargingBays[bay].setLowcut(setting)
 			},
 		}
 		actions.ss_lock = {

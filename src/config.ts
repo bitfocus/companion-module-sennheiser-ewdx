@@ -1,7 +1,7 @@
-import { Regex, type SomeCompanionConfigField } from '@companion-module/base'
+import { Regex, type SomeCompanionConfigField, type JsonObject } from '@companion-module/base'
 import { DeviceModel } from './ewdx.js'
 
-export interface ModuleConfig {
+export interface ModuleConfig extends JsonObject {
 	host: string
 	model: DeviceModel
 }

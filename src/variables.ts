@@ -104,7 +104,7 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 			...txChannelVariables.flat(),
 		]
 
-		self.setVariableDefinitions(allVariables)
+		self.setVariableDefinitions(Object.fromEntries(allVariables.map(({ variableId, name }) => [variableId, { name }])))
 	} else if (self.device instanceof CHG70N) {
 		const bayVariables = Array.from({ length: 2 }, (_, i) => [
 			{ variableId: `bay${i + 1}_update_progress`, name: `Update progress of bay ${i + 1}` },
@@ -147,6 +147,6 @@ export function UpdateVariableDefinitions(self: ModuleInstance): void {
 			...networkVariables,
 		]
 
-		self.setVariableDefinitions(allVariables)
+		self.setVariableDefinitions(Object.fromEntries(allVariables.map(({ variableId, name }) => [variableId, { name }])))
 	}
 }
