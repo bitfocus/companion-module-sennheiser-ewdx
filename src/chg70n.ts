@@ -333,7 +333,7 @@ export class CHG70N extends EWDX {
 				},
 			},
 		}
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.sendMessage(JSON.stringify(msgNetwork))
 		}, 1000)
 
@@ -368,7 +368,7 @@ export class CHG70N extends EWDX {
 				},
 			},
 		}
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.sendMessage(JSON.stringify(msgBays))
 		}, 1000)
 	}
@@ -484,8 +484,10 @@ export class CHG70N extends EWDX {
 				this.chargingBays[1].identification = json.bays.identify[1]
 			}
 			if (json.bays.device_type != undefined) {
-				this.chargingBays[0].chargingDevice = ChargingDevice[json.bays.device_type[0] as keyof typeof ChargingDevice]
-				this.chargingBays[1].chargingDevice = ChargingDevice[json.bays.device_type[1] as keyof typeof ChargingDevice]
+				this.chargingBays[0].chargingDevice =
+					ChargingDevice[json.bays.device_type[0] as keyof typeof ChargingDevice] ?? ChargingDevice.UNKNOWN
+				this.chargingBays[1].chargingDevice =
+					ChargingDevice[json.bays.device_type[1] as keyof typeof ChargingDevice] ?? ChargingDevice.UNKNOWN
 			}
 			if (json.bays.bat_timetofull != undefined) {
 				this.chargingBays[0].timeToFull = json.bays.bat_timetofull[0]

@@ -63,6 +63,11 @@ export abstract class EWDX {
 
 	deviceConnected: boolean
 	private responseTimeout?: NodeJS.Timeout
+	private readonly pendingTimeouts = new Set<NodeJS.Timeout>()
+	private pollingTimer: NodeJS.Timeout
+	private pingTimer: NodeJS.Timeout
+	private destroyed = false
+	private socketReady = false
 
 	constructor(context: ModuleInstance, model: DeviceModel, host: string) {
 		this.context = context
@@ -81,31 +86,68 @@ export abstract class EWDX {
 
 		this.initSubscriptions()
 
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.getStaticInformation()
 		}, 1000)
 
-		setInterval(() => {
+		this.pollingTimer = setInterval(() => {
 			this.initSubscriptions()
 			this.getStaticInformation()
 		}, pollingInterval)
 
 		// Pinging the device every 5 seconds to make sure it did not went offline
-		setInterval(() => {
+		this.pingTimer = setInterval(() => {
 			this.getName()
 		}, 5000)
 	}
 
+	protected scheduleTimeout(callback: () => void, delay: number): void {
+		if (this.destroyed) return
+		const timeout = setTimeout(() => {
+			this.pendingTimeouts.delete(timeout)
+			if (!this.destroyed) callback()
+		}, delay)
+		this.pendingTimeouts.add(timeout)
+	}
+
+	destroy(): void {
+		if (this.destroyed) return
+		this.destroyed = true
+		clearInterval(this.pollingTimer)
+		clearInterval(this.pingTimer)
+		for (const timeout of this.pendingTimeouts) clearTimeout(timeout)
+		this.pendingTimeouts.clear()
+		clearTimeout(this.responseTimeout)
+		this.responseTimeout = undefined
+		this.deviceConnected = false
+		// A socket still binding will be closed by its listening callback.
+		if (this.socketReady) this.closeSocket()
+	}
+
+	private closeSocket(): void {
+		this.socketReady = false
+		try {
+			this.socket.close()
+		} catch (err) {
+			this.context.log('debug', `Socket could not be closed: ${String(err)}`)
+		}
+	}
+
 	checkMessage(raw: Uint8Array, rinfo: RemoteInfo): void {
-		if (rinfo.address == this.host && rinfo.port == udpPort) {
+		if (!this.destroyed && rinfo.address == this.host && rinfo.port == udpPort) {
 			const message = Buffer.from(raw).toString()
-			console.log(message)
-			const json: JSON = JSON.parse(message)
-			if (json) {
-				this.parseMessage(json)
-			} else {
-				console.debug('Error parsing received message from device.')
+			let json: unknown
+			try {
+				json = JSON.parse(message)
+			} catch (err) {
+				this.context.log('warn', `Error parsing received message from device: ${String(err)}`)
+				return
 			}
+			if (json === null || typeof json !== 'object' || Array.isArray(json)) {
+				this.context.log('warn', 'Received message from device is not a JSON object.')
+				return
+			}
+			this.parseMessage(json)
 
 			if (this.deviceConnected == false) {
 				this.deviceConnected = true
@@ -127,11 +169,18 @@ export abstract class EWDX {
 	}
 
 	public sendMessage(message: string): void {
-		this.socket.send(message, udpPort, this.host)
+		if (this.destroyed || !this.socketReady) return
+		try {
+			this.socket.send(message, udpPort, this.host)
+		} catch (err) {
+			this.handleSocketError(err instanceof Error ? err : new Error(String(err)))
+			return
+		}
 		if (this.responseTimeout) {
 			clearTimeout(this.responseTimeout)
 		}
 		this.responseTimeout = setTimeout(() => {
+			this.responseTimeout = undefined
 			this.resetAllValues()
 			this.deviceConnected = false
 			this.context.checkAllFeedbacks()
@@ -142,17 +191,32 @@ export abstract class EWDX {
 		}, 2000)
 	}
 
-	private setupListeners() {
-		this.socket.bind(0, this.host, () => {
-			console.log('Socket successfully connected.')
-		})
+	private handleSocketError(err: Error): void {
+		if (this.destroyed) return
+		this.context.log('error', `Socket error: ${err.message}`)
+		clearTimeout(this.responseTimeout)
+		this.responseTimeout = undefined
+		this.deviceConnected = false
+		this.resetAllValues()
+		this.context.checkAllFeedbacks()
+		this.context.updateStatus(InstanceStatus.ConnectionFailure, err.message)
+	}
 
-		this.socket.on('error', (err) => {
-			console.error('Socket error:', err)
-		})
+	private setupListeners() {
+		this.socket.on('error', (err) => this.handleSocketError(err))
 
 		this.socket.on('close', () => {
-			console.log('Socket closed!')
+			this.socketReady = false
+			this.context.log('debug', 'Socket closed!')
+		})
+
+		this.socket.bind(0, this.host, () => {
+			this.socketReady = true
+			if (this.destroyed) {
+				this.closeSocket()
+				return
+			}
+			this.context.log('debug', 'Socket successfully connected.')
 		})
 	}
 

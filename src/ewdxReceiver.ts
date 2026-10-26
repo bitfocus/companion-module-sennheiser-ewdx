@@ -205,7 +205,7 @@ export class EWDXReceiver extends EWDX {
 				},
 			},
 		}
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.sendMessage(JSON.stringify(msgRX1))
 		}, 1000)
 
@@ -225,7 +225,7 @@ export class EWDXReceiver extends EWDX {
 					},
 				},
 			}
-			setTimeout(() => {
+			this.scheduleTimeout(() => {
 				this.sendMessage(JSON.stringify(msgRX2))
 			}, 1000)
 		}
@@ -285,7 +285,7 @@ export class EWDXReceiver extends EWDX {
 			},
 		}
 
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.sendMessage(JSON.stringify(msgMates))
 		}, 1000)
 
@@ -313,7 +313,7 @@ export class EWDXReceiver extends EWDX {
 			},
 		}
 
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.sendMessage(JSON.stringify(msgDevice))
 		}, 1000)
 
@@ -364,7 +364,7 @@ export class EWDXReceiver extends EWDX {
 				},
 			},
 		}
-		setTimeout(() => {
+		this.scheduleTimeout(() => {
 			this.sendMessage(JSON.stringify(msgNetwork))
 		}, 1000)
 	}
@@ -947,7 +947,7 @@ class RxChannel {
 		name = name.toUpperCase()
 		const command = '/rx' + this.index + '/name'
 		this.parentDevice.sendCommand(command, name)
-		console.log('Name set to: ' + name)
+		this.parentDevice.context.log('debug', 'Name set to: ' + name)
 	}
 
 	setGain(gain: number): void {

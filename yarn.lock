@@ -962,9 +962,9 @@ __metadata:
   languageName: node
   linkType: hard
 
-"companion-module-sennnheiser-ewdx@workspace:.":
+"companion-module-sennheiser-ewdx@workspace:.":
   version: 0.0.0-use.local
-  resolution: "companion-module-sennnheiser-ewdx@workspace:."
+  resolution: "companion-module-sennheiser-ewdx@workspace:."
   dependencies:
     "@companion-module/base": "npm:2.1.3"
     "@companion-module/tools": "npm:3.1.0"

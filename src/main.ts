@@ -24,6 +24,7 @@ export class ModuleInstance extends InstanceBase<ModuleTypes> {
 	}
 
 	async destroy(): Promise<void> {
+		this.device?.destroy()
 		this.log('debug', 'destroy')
 	}
 
@@ -33,6 +34,7 @@ export class ModuleInstance extends InstanceBase<ModuleTypes> {
 	}
 
 	initReceiver(): void {
+		this.device?.destroy()
 		if (this.config.host != null && this.config.host != '') {
 			if (this.config.model != DeviceModel.CHG70N) {
 				this.device = new EWDXReceiver(this, this.config.model, this.config.host)

@@ -1,7 +1,7 @@
 import type { SomeButtonGraphicsElement, ButtonGraphicsTextElement } from '@companion-module/base'
 import { graphics } from 'companion-module-utils'
 import type { EWDXReceiver } from './ewdxReceiver.js'
-import { icons } from './graphics.js'
+import { icons, pngDataUri } from './graphics.js'
 import { formatBatteryLabel } from './statusText.js'
 
 const triangle = (location: 'topLeft' | 'topRight'): string =>
@@ -11,8 +11,8 @@ const triangle = (location: 'topLeft' | 'topRight'): string =>
 		image: graphics.corner({ width: 15, height: 15, size: 15, location, color: 0x00ff00, opacity: 255 }),
 	})
 
-const antennaLeft = triangle('topLeft')
-const antennaRight = triangle('topRight')
+const antennaLeft = pngDataUri(triangle('topLeft'))
+const antennaRight = pngDataUri(triangle('topRight'))
 
 export function getReceiverDisplayState(
 	receiver: EWDXReceiver,
@@ -28,21 +28,24 @@ export function getReceiverDisplayState(
 		batteryLabel: connected ? formatBatteryLabel(channel.mate.batteryType, channel.mate.batteryLifetime, gauge) : '—',
 		batteryColor: !connected ? 0x1f2937 : gauge > 50 ? 0x14532d : gauge >= 20 ? 0x713f12 : 0x7f1d1d,
 		signal: connected ? `${channel.rsqi}%` : '—',
-		antenna: connected
-			? channel.rsqi > 70
-				? icons.antenna.green
-				: channel.rsqi > 40
-					? icons.antenna.yellow
-					: channel.rsqi >= 1
-						? icons.antenna.red
-						: icons.antenna.gray
-			: icons.antenna.gray,
-		shield:
+		antenna: pngDataUri(
+			connected
+				? channel.rsqi > 70
+					? icons.antenna.green
+					: channel.rsqi > 40
+						? icons.antenna.yellow
+						: channel.rsqi >= 1
+							? icons.antenna.red
+							: icons.antenna.gray
+				: icons.antenna.gray,
+		),
+		shield: pngDataUri(
 			connected && channel.hasAes256Error
 				? icons.shield.red
 				: connected && receiver.encryption
 					? icons.shield.green
 					: icons.shield.gray,
+		),
 		antennaLeft: connected && channel.activeAntenna == 1,
 		antennaRight: connected && channel.activeAntenna == 2,
 		muted: connected && (channel.mate.muted || channel.muted),
@@ -93,7 +96,7 @@ export function receiverDisplayElements(): SomeButtonGraphicsElement[] {
 		type: 'image',
 		id,
 		...bounds(x, y, 16, 16),
-		base64Image: image,
+		base64Image: typeof image === 'string' ? pngDataUri(image) : image,
 		fillMode: 'fit',
 		...(enabled ? { enabled: state(enabled) } : {}),
 	})

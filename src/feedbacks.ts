@@ -667,15 +667,24 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			name: 'Charging Bay: Status Display Data',
 			description: 'Provides live data for the native layered bay status preset',
 			type: 'value',
-			options: [{
-				id: 'bay', type: 'dropdown', label: 'Charging Bay', default: 0,
-				choices: [{ id: 0, label: 'Bay 1' }, { id: 1, label: 'Bay 2' }],
-			}],
+			options: [
+				{
+					id: 'bay',
+					type: 'dropdown',
+					label: 'Charging Bay',
+					default: 0,
+					choices: [
+						{ id: 0, label: 'Bay 1' },
+						{ id: 1, label: 'Bay 2' },
+					],
+				},
+			],
 			callback: (feedback) => getChargerDisplayState(device, Number(feedback.options.bay)),
 		}
 		feedbacks.baystate = {
 			name: 'Charging Bay: Status Display',
-			description: 'Legacy image-buffer display. Apply the Bay Status preset for native graphics without deprecated image buffers.',
+			description:
+				'Legacy image-buffer display. Apply the Bay Status preset for native graphics without deprecated image buffers.',
 			type: 'advanced',
 			affectedProperties: ['imageBuffer', 'text', 'size', 'alignment'],
 			options: [

@@ -553,7 +553,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				} else if (direction === 'decrease') {
 					index = Math.max(index - steps, 0)
 				} else {
-					console.error('Invalid gain adjustment')
+					self.log('warn', 'Invalid gain adjustment')
+					return
 				}
 
 				const newGain = availableGains[index]
