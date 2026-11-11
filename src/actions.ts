@@ -12,8 +12,45 @@ import {
 import { DeviceModel } from './ewdx.js'
 import { CHG70N } from './chg70n.js'
 
-function optionString(value: unknown): string {
-	return typeof value === 'string' || typeof value === 'number' || typeof value === 'boolean' ? String(value) : ''
+export type ActionsSchema = {
+	restart: { options: Record<string, never> }
+	name: { options: { name: string } }
+	location: { options: { location: string } }
+	networkSettings: { options: { dhcp: boolean; mdns: boolean; ip: string; netmask: string; gateway: string } }
+	brightness: { options: { brightness: number } }
+	identification: { options: { ident: boolean } }
+	autolock: { options: { lock: boolean } }
+	encryption: { options: { encryption: boolean } }
+	link_density: { options: { linkdensity: boolean } }
+	rx_mute: { options: { receiver: number; mute: 'mute' | 'unmute' | 'toggle' } }
+	rx_ss_mute_config_sk: { options: { receiver: number; setting: MuteOptions } }
+	rx_ss_mute_config_table: { options: { receiver: number; setting: MuteOptionsTable } }
+	rx_ss_ignore: { options: { receiver: number; setting: SyncSettings; ignore: boolean } }
+	rx_ss_lowcut: { options: { receiver: number; lowcut: LowcutOptions } }
+	rx_ss_lock: { options: { receiver: number; lock: boolean } }
+	rx_ss_trim: { options: { receiver: number; trim: number } }
+	rx_ss_tx_led: { options: { receiver: number; enabled: boolean } }
+	rx_ss_cable_emulation: { options: { receiver: number; setting: CableEmulationOptions } }
+	rx_name: { options: { receiver: number; name: string } }
+	rx_gain: { options: { receiver: number; gain: string } }
+	rx_gain_relative: { options: { receiver: number; direction: 'increase' | 'decrease'; steps: number } }
+	rx_freq: { options: { receiver: number; frequency: number } }
+	rx_identification: { options: { receiver: number; ident: boolean } }
+	dante_network_settings: {
+		options: { danteInterface: 0 | 1; dhcp: boolean; ip: string; netmask: string; gateway: string }
+	}
+	dante_port_mapping: { options: { config: DantePortMapping } }
+	device_identification: { options: { setting: boolean } }
+	bay_identification: { options: { bay: 0 | 1; setting: boolean } }
+	ss_mute_config: { options: { bay: 0 | 1; setting: MuteOptions } }
+	ss_frequency: { options: { bay: 0 | 1; setting: number } }
+	ss_trim: { options: { bay: 0 | 1; setting: number } }
+	ss_name: { options: { bay: 0 | 1; setting: string } }
+	ss_lowcut: { options: { bay: 0 | 1; setting: LowcutOptions } }
+	ss_lock: { options: { bay: 0 | 1; setting: boolean } }
+	ss_link_density_mode: { options: { bay: 0 | 1; setting: boolean } }
+	ss_tx_led: { options: { bay: 0 | 1; setting: boolean } }
+	ss_cable_emulation: { options: { bay: 0 | 1; setting: CableEmulationOptions } }
 }
 
 export function UpdateActions(self: ModuleInstance): void {
@@ -25,7 +62,45 @@ export function UpdateActions(self: ModuleInstance): void {
 		}))
 	}
 
-	const actions: CompanionActionDefinitions = {}
+	// Definitions for other device models remain unavailable.
+	const actions: CompanionActionDefinitions<ActionsSchema> = {
+		restart: undefined,
+		name: undefined,
+		location: undefined,
+		networkSettings: undefined,
+		brightness: undefined,
+		identification: undefined,
+		autolock: undefined,
+		encryption: undefined,
+		link_density: undefined,
+		rx_mute: undefined,
+		rx_ss_mute_config_sk: undefined,
+		rx_ss_mute_config_table: undefined,
+		rx_ss_ignore: undefined,
+		rx_ss_lowcut: undefined,
+		rx_ss_lock: undefined,
+		rx_ss_trim: undefined,
+		rx_ss_tx_led: undefined,
+		rx_ss_cable_emulation: undefined,
+		rx_name: undefined,
+		rx_gain: undefined,
+		rx_gain_relative: undefined,
+		rx_freq: undefined,
+		rx_identification: undefined,
+		dante_network_settings: undefined,
+		dante_port_mapping: undefined,
+		device_identification: undefined,
+		bay_identification: undefined,
+		ss_mute_config: undefined,
+		ss_frequency: undefined,
+		ss_trim: undefined,
+		ss_name: undefined,
+		ss_lowcut: undefined,
+		ss_lock: undefined,
+		ss_link_density_mode: undefined,
+		ss_tx_led: undefined,
+		ss_cable_emulation: undefined,
+	}
 
 	actions.restart = {
 		name: 'Device: Restart',
@@ -47,7 +122,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		],
 		callback: async (action) => {
-			const parsedName = optionString(action.options.name)
+			const parsedName = action.options.name
 			self.device.setName(parsedName)
 		},
 	}
@@ -63,7 +138,7 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		],
 		callback: async (action) => {
-			const location = optionString(action.options.location)
+			const location = action.options.location
 			self.device.setLocation(location)
 		},
 	}
@@ -106,11 +181,11 @@ export function UpdateActions(self: ModuleInstance): void {
 			},
 		],
 		callback: async (action) => {
-			const dhcp = Boolean(action.options.dhcp)
-			const mdns = Boolean(action.options.mdns)
-			const ip = optionString(action.options.ip)
-			const netmask = optionString(action.options.netmask)
-			const gateway = optionString(action.options.gateway)
+			const dhcp = action.options.dhcp
+			const mdns = action.options.mdns
+			const ip = action.options.ip
+			const netmask = action.options.netmask
+			const gateway = action.options.gateway
 			self.device.setNetworkSettings(dhcp, mdns, ip, netmask, gateway)
 		},
 	}
@@ -130,7 +205,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const brightness = Number(action.options.brightness)
+				const brightness = action.options.brightness
 				receiver.setBrightness(brightness)
 			},
 		}
@@ -145,7 +220,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const ident = Boolean(action.options.ident)
+				const ident = action.options.ident
 				receiver.setIdentification(ident)
 			},
 		}
@@ -160,7 +235,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const lock = Boolean(action.options.lock)
+				const lock = action.options.lock
 				receiver.setAutoLock(lock)
 			},
 		}
@@ -175,7 +250,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const encryption = Boolean(action.options.encryption)
+				const encryption = action.options.encryption
 				receiver.setEncryption(encryption)
 			},
 		}
@@ -191,7 +266,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const linkdensity = Boolean(action.options.linkdensity)
+				const linkdensity = action.options.linkdensity
 				receiver.setLinkDensityMode(linkdensity)
 			},
 		}
@@ -218,8 +293,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const mute = optionString(action.options.mute)
+				const channel = action.options.receiver
+				const mute = action.options.mute
 				switch (mute) {
 					case 'mute':
 						receiver.channels[channel].setMuteState(true)
@@ -256,8 +331,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const muteSetting = Number(action.options.setting)
+				const channel = action.options.receiver
+				const muteSetting = action.options.setting
 				receiver.channels[channel].setMuteConfigSK(muteSetting)
 			},
 		}
@@ -285,8 +360,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const muteSetting = Number(action.options.setting)
+				const channel = action.options.receiver
+				const muteSetting = action.options.setting
 				receiver.channels[channel].setMuteConfigTable(muteSetting)
 			},
 		}
@@ -324,9 +399,9 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const setting = Number(action.options.setting)
-				const ignore = Boolean(action.options.ignore)
+				const channel = action.options.receiver
+				const setting = action.options.setting
+				const ignore = action.options.ignore
 				receiver.channels[channel].setSyncIgnore(setting, ignore)
 			},
 		}
@@ -354,8 +429,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const lowcut = Number(action.options.lowcut)
+				const channel = action.options.receiver
+				const lowcut = action.options.lowcut
 				receiver.channels[channel].setLowcut(lowcut)
 			},
 		}
@@ -377,8 +452,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const lock = Boolean(action.options.lock)
+				const channel = action.options.receiver
+				const lock = action.options.lock
 				receiver.channels[channel].setAutoLock(lock)
 			},
 		}
@@ -402,8 +477,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const trim = Number(action.options.trim)
+				const channel = action.options.receiver
+				const trim = action.options.trim
 				receiver.channels[channel].setTrim(trim)
 			},
 		}
@@ -425,8 +500,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const enabled = Boolean(action.options.enabled)
+				const channel = action.options.receiver
+				const enabled = action.options.enabled
 				receiver.channels[channel].setTXLED(enabled)
 			},
 		}
@@ -454,8 +529,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const setting = Number(action.options.setting)
+				const channel = action.options.receiver
+				const setting = action.options.setting
 				receiver.channels[channel].setCableEmulation(setting)
 			},
 		}
@@ -478,8 +553,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const parsedName = optionString(action.options.name)
+				const channel = action.options.receiver
+				const parsedName = action.options.name
 				receiver.channels[channel].setName(parsedName)
 			},
 		}
@@ -505,7 +580,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
+				const channel = action.options.receiver
 				const gain = Number(action.options.gain)
 				receiver.channels[channel].setGain(gain)
 			},
@@ -540,9 +615,9 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const direction = optionString(action.options.direction)
-				const steps = Number(action.options.steps)
+				const channel = action.options.receiver
+				const direction = action.options.direction
+				const steps = action.options.steps
 				const availableGains = Array.from({ length: 16 }, (_, i) => -3 + i * 3)
 
 				const currentGain = receiver.channels[channel].gain
@@ -581,8 +656,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const freq = Number(action.options.frequency)
+				const channel = action.options.receiver
+				const freq = action.options.frequency
 				receiver.channels[channel].setFrequency(freq)
 			},
 		}
@@ -604,8 +679,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const channel = Number(action.options.receiver)
-				const ident = Boolean(action.options.ident)
+				const channel = action.options.receiver
+				const ident = action.options.ident
 				receiver.channels[channel].setIdentification(ident)
 			},
 		}
@@ -655,11 +730,11 @@ export function UpdateActions(self: ModuleInstance): void {
 						},
 					],
 					callback: async (action) => {
-						const interfaceId = Number(action.options.danteInterface)
-						const dhcp = Boolean(action.options.dhcp)
-						const ip = optionString(action.options.ip)
-						const netmask = optionString(action.options.netmask)
-						const gateway = optionString(action.options.gateway)
+						const interfaceId = action.options.danteInterface
+						const dhcp = action.options.dhcp
+						const ip = action.options.ip
+						const netmask = action.options.netmask
+						const gateway = action.options.gateway
 						receiver.setDanteNetworkSettings(interfaceId, dhcp, ip, netmask, gateway)
 					},
 				}
@@ -680,7 +755,7 @@ export function UpdateActions(self: ModuleInstance): void {
 						},
 					],
 					callback: async (action) => {
-						const setting = Number(action.options.config)
+						const setting = action.options.config
 						receiver.setDantePortMapping(setting)
 					},
 				}
@@ -700,7 +775,7 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const setting = Boolean(action.options.setting)
+				const setting = action.options.setting
 				device.setIdentification(setting)
 			},
 		}
@@ -726,8 +801,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Boolean(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setIdentify(setting)
 			},
 		}
@@ -758,8 +833,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const muteSetting = Number(action.options.setting)
+				const bay = action.options.bay
+				const muteSetting = action.options.setting
 				device.chargingBays[bay].setMuteConfig(muteSetting)
 			},
 		}
@@ -786,8 +861,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Number(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setFrequency(setting)
 			},
 		}
@@ -814,8 +889,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Number(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setTrim(setting)
 			},
 		}
@@ -841,8 +916,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = optionString(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setName(setting)
 			},
 		}
@@ -874,8 +949,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Number(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setLowcut(setting)
 			},
 		}
@@ -900,8 +975,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Boolean(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setAutoLock(setting)
 			},
 		}
@@ -926,8 +1001,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Boolean(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setLinkDensityMode(setting)
 			},
 		}
@@ -952,8 +1027,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Boolean(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setTxLED(setting)
 			},
 		}
@@ -984,8 +1059,8 @@ export function UpdateActions(self: ModuleInstance): void {
 				},
 			],
 			callback: async (action) => {
-				const bay = Number(action.options.bay)
-				const setting = Number(action.options.setting)
+				const bay = action.options.bay
+				const setting = action.options.setting
 				device.chargingBays[bay].setCableEmulation(setting)
 			},
 		}
