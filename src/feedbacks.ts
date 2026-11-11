@@ -10,6 +10,27 @@ import { DeviceModel } from './ewdx.js'
 import { ChargingBayState, ChargingBayWarnings, ChargingDevice, CHG70N } from './chg70n.js'
 import { combineRgb, CompanionFeedbackDefinitions } from '@companion-module/base'
 
+export type FeedbacksSchema = {
+	deviceIdentification: { type: 'boolean'; options: Record<string, never> }
+	ActiveAntenna: { type: 'boolean'; options: { receiver: number; antenna: '1' | '2' } }
+	device_encryption: { type: 'boolean'; options: Record<string, never> }
+	device_link_density_mode: { type: 'boolean'; options: Record<string, never> }
+	tx_muted: { type: 'boolean'; options: { receiver: number } }
+	rx_encryption_error: { type: 'boolean'; options: { receiver: number } }
+	rx_af_peak_warning: { type: 'boolean'; options: { receiver: number } }
+	rx_identification: { type: 'boolean'; options: { receiver: number } }
+	tx_mute_config_sk: { type: 'boolean'; options: { receiver: number; setting: MuteOptions } }
+	tx_mute_config_table: { type: 'boolean'; options: { receiver: number; setting: MuteOptionsTable } }
+	rx_sync_ignore: { type: 'boolean'; options: { receiver: number; setting: SyncSettings } }
+	receiverDisplay: { type: 'value'; options: { receiver: number } }
+	receiverState: { type: 'advanced'; options: { receiver: number } }
+	dante_port_mapping: { type: 'boolean'; options: { mapping: DantePortMapping } }
+	chargerDisplay: { type: 'value'; options: { bay: 0 | 1 } }
+	baystate: { type: 'advanced'; options: { bay: 0 | 1 } }
+	bayIdentification: { type: 'boolean'; options: { bay: 0 | 1 } }
+	bayWarnings: { type: 'boolean'; options: { bay: 0 | 1; warning: ChargingBayWarnings } }
+}
+
 export function UpdateFeedbacks(self: ModuleInstance): void {
 	function getChannelOptions(): { id: number; label: string }[] {
 		const maxChannels = self.device.model === DeviceModel.EM4 ? 4 : 2
@@ -19,7 +40,27 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 		}))
 	}
 
-	const feedbacks: CompanionFeedbackDefinitions = {}
+	// Definitions for other device models remain unavailable.
+	const feedbacks: CompanionFeedbackDefinitions<FeedbacksSchema> = {
+		deviceIdentification: undefined,
+		ActiveAntenna: undefined,
+		device_encryption: undefined,
+		device_link_density_mode: undefined,
+		tx_muted: undefined,
+		rx_encryption_error: undefined,
+		rx_af_peak_warning: undefined,
+		rx_identification: undefined,
+		tx_mute_config_sk: undefined,
+		tx_mute_config_table: undefined,
+		rx_sync_ignore: undefined,
+		receiverDisplay: undefined,
+		receiverState: undefined,
+		dante_port_mapping: undefined,
+		chargerDisplay: undefined,
+		baystate: undefined,
+		bayIdentification: undefined,
+		bayWarnings: undefined,
+	}
 
 	feedbacks.deviceIdentification = {
 		name: 'Device: Identification',
@@ -64,9 +105,9 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
+				const channel = feedback.options.receiver
 
-				return receiver.channels[channel].activeAntenna == feedback.options.antenna
+				return receiver.channels[channel].activeAntenna === Number(feedback.options.antenna)
 			},
 		}
 		feedbacks.device_encryption = {
@@ -109,7 +150,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
+				const channel = feedback.options.receiver
 				return receiver.channels[channel].mate.muted
 			},
 		}
@@ -130,7 +171,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
+				const channel = feedback.options.receiver
 				return receiver.channels[channel].hasAes256Error
 			},
 		}
@@ -151,7 +192,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
+				const channel = feedback.options.receiver
 				return receiver.channels[channel].hasAfPeakWarning
 			},
 		}
@@ -172,7 +213,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
+				const channel = feedback.options.receiver
 				return receiver.channels[channel].identification
 			},
 		}
@@ -204,14 +245,14 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
-				const setting = Number(feedback.options.setting)
+				const channel = feedback.options.receiver
+				const setting = feedback.options.setting
 				switch (setting) {
-					case Number(MuteOptions.off):
+					case MuteOptions.off:
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.off
-					case Number(MuteOptions.af_mute):
+					case MuteOptions.af_mute:
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.af_mute
-					case Number(MuteOptions.rf_mute):
+					case MuteOptions.rf_mute:
 						return receiver.channels[channel].mate.muteConfig == MuteOptions.rf_mute
 					default:
 						return false
@@ -246,16 +287,16 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
-				const setting = Number(feedback.options.setting)
+				const channel = feedback.options.receiver
+				const setting = feedback.options.setting
 				switch (setting) {
-					case Number(MuteOptionsTable.off):
+					case MuteOptionsTable.off:
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.off
-					case Number(MuteOptionsTable.af_mute):
+					case MuteOptionsTable.af_mute:
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.af_mute
-					case Number(MuteOptionsTable.push_to_talk):
+					case MuteOptionsTable.push_to_talk:
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_talk
-					case Number(MuteOptionsTable.push_to_mute):
+					case MuteOptionsTable.push_to_mute:
 						return receiver.channels[channel].mate.muteConfig == MuteOptionsTable.push_to_mute
 					default:
 						return false
@@ -295,24 +336,24 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const channel = Number(feedback.options.receiver)
-				const setting = Number(feedback.options.setting)
+				const channel = feedback.options.receiver
+				const setting = feedback.options.setting
 				switch (setting) {
-					case Number(SyncSettings.trim_ignore):
+					case SyncSettings.trim_ignore:
 						return receiver.channels[channel].syncIgnoreTrim
-					case Number(SyncSettings.name_ignore):
+					case SyncSettings.name_ignore:
 						return receiver.channels[channel].syncIgnoreName
-					case Number(SyncSettings.mute_config_ignore):
+					case SyncSettings.mute_config_ignore:
 						return receiver.channels[channel].syncIgnoreMuteConfig
-					case Number(SyncSettings.lowcut_ignore):
+					case SyncSettings.lowcut_ignore:
 						return receiver.channels[channel].syncIgnoreLowcut
-					case Number(SyncSettings.lock_ignore):
+					case SyncSettings.lock_ignore:
 						return receiver.channels[channel].syncIgnoreLock
-					case Number(SyncSettings.led_ignore):
+					case SyncSettings.led_ignore:
 						return receiver.channels[channel].syncIgnoreLED
-					case Number(SyncSettings.frequency_ignore):
+					case SyncSettings.frequency_ignore:
 						return receiver.channels[channel].syncIgnoreFrequency
-					case Number(SyncSettings.cable_emulation_ignore):
+					case SyncSettings.cable_emulation_ignore:
 						return receiver.channels[channel].syncIgnoreCableEmulation
 					default:
 						return false
@@ -326,11 +367,12 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 			options: [
 				{ id: 'receiver', type: 'dropdown', label: 'Receiver Channel', default: 0, choices: getChannelOptions() },
 			],
-			callback: (feedback) => getReceiverDisplayState(receiver, Number(feedback.options.receiver)),
+			callback: (feedback) => getReceiverDisplayState(receiver, feedback.options.receiver),
 		}
 		feedbacks.receiverState = {
 			name: 'RX: Status Display',
-			description: 'Displays detailed information about the selected receiver channel',
+			description:
+				'Legacy image-buffer display. Apply the Channel Status preset for native graphics without deprecated image buffers.',
 			type: 'advanced',
 			affectedProperties: ['imageBuffer', 'text', 'size', 'alignment'],
 			options: [
@@ -343,7 +385,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: async (feedback) => {
-				const channel = Number(feedback.options.receiver)
+				const channel = feedback.options.receiver
 
 				if (feedback.image) {
 					const commonIconProps: graphics.OptionsIcon = {
@@ -653,7 +695,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 						},
 					],
 					callback: (feedback) => {
-						const mapping = feedback.options.mapping as DantePortMapping
+						const mapping = feedback.options.mapping
 
 						return receiver.danteInterfaceMapping === mapping
 					},
@@ -679,7 +721,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 					],
 				},
 			],
-			callback: (feedback) => getChargerDisplayState(device, Number(feedback.options.bay)),
+			callback: (feedback) => getChargerDisplayState(device, feedback.options.bay),
 		}
 		feedbacks.baystate = {
 			name: 'Charging Bay: Status Display',
@@ -700,7 +742,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: async (feedback) => {
-				const bay = Number(feedback.options.bay)
+				const bay = feedback.options.bay
 				if (feedback.image) {
 					const commonIconProps: graphics.OptionsIcon = {
 						width: feedback.image.width,
@@ -991,7 +1033,7 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const bay = Number(feedback.options.bay)
+				const bay = feedback.options.bay
 				return device.chargingBays[bay].identification
 			},
 		}
@@ -1028,8 +1070,8 @@ export function UpdateFeedbacks(self: ModuleInstance): void {
 				},
 			],
 			callback: (feedback) => {
-				const bay = Number(feedback.options.bay)
-				const warning = feedback.options.warning as ChargingBayWarnings
+				const bay = feedback.options.bay
+				const warning = feedback.options.warning
 				return device.chargingBays[bay].warnings.includes(warning)
 			},
 		}

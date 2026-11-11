@@ -43,7 +43,7 @@ export function UpdatePresets(self: ModuleInstance): void {
 			Object.assign(presets, createPreset(i))
 		}
 	} else if (self.device instanceof CHG70N) {
-		const createPreset = (bay: number): CompanionPresetDefinitions<ModuleTypes> => ({
+		const createPreset = (bay: 0 | 1): CompanionPresetDefinitions<ModuleTypes> => ({
 			[`bay_status_${bay}`]: {
 				type: 'layered',
 				name: `Status Charging Bay ${bay + 1}`,
@@ -70,7 +70,7 @@ export function UpdatePresets(self: ModuleInstance): void {
 			},
 		})
 
-		for (let i = 0; i < 2; i++) {
+		for (const i of [0, 1] as const) {
 			Object.assign(presets, createPreset(i))
 		}
 	}

@@ -1,6 +1,6 @@
 {
 	"name": "companion-module-sennheiser-ewdx",
-	"version": "1.1.1",
+	"version": "1.1.2",
 	"main": "dist/main.js",
 	"type": "module",
 	"scripts": {
@@ -23,16 +23,16 @@
 		"companion-module-utils": "^0.6.1"
 	},
 	"devDependencies": {
-		"@companion-module/tools": "3.1.0",
+		"@companion-module/tools": "^3.1.1",
 		"@types/jest": "^29.5.14",
-		"@types/node": "^22.15.19",
+		"@types/node": "^26.6.4",
 		"eslint": "^10.2.0",
 		"husky": "^9.1.7",
 		"lint-staged": "^15.2.11",
 		"prettier": "^3.8.1",
 		"rimraf": "^6.0.1",
-		"typescript": "~5.9.3",
-		"typescript-eslint": "^8.56.1"
+		"typescript": "~6.0.3",
+		"typescript-eslint": "^8.71.0"
 	},
 	"prettier": "@companion-module/tools/.prettierrc.json",
 	"lint-staged": {
@@ -43,5 +43,9 @@
 			"yarn lint:raw --fix"
 		]
 	},
-	"packageManager": "yarn@4.13.0"
+	"packageManager": "yarn@4.13.0",
+	"engines": {
+		"node": "^26",
+		"yarn": "^4"
+	}
 }

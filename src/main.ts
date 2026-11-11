@@ -1,14 +1,18 @@
 import { InstanceBase, InstanceStatus, SomeCompanionConfigField, type InstanceTypes } from '@companion-module/base'
 import { GetConfigFields, type ModuleConfig } from './config.js'
-import { UpdateActions } from './actions.js'
-import { UpdateFeedbacks } from './feedbacks.js'
+import { UpdateActions, type ActionsSchema } from './actions.js'
+import { UpdateFeedbacks, type FeedbacksSchema } from './feedbacks.js'
 import { UpdateVariableDefinitions } from './variables.js'
 import { DeviceModel, EWDX } from './ewdx.js'
 import { UpdatePresets } from './presets.js'
 import { CHG70N } from './chg70n.js'
 import { EWDXReceiver } from './ewdxReceiver.js'
 
-export type ModuleTypes = Omit<InstanceTypes, 'config'> & { config: ModuleConfig }
+export type ModuleTypes = Omit<InstanceTypes, 'config' | 'actions' | 'feedbacks'> & {
+	config: ModuleConfig
+	actions: ActionsSchema
+	feedbacks: FeedbacksSchema
+}
 
 export class ModuleInstance extends InstanceBase<ModuleTypes> {
 	config!: ModuleConfig
